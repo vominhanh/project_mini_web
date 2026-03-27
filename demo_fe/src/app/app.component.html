@@ -1,0 +1,97 @@
+<main class="auth-page">
+  <section class="auth-card" aria-label="Authentication form">
+    <div class="auth-header">
+      <h1>Keycloak Demo</h1>
+      <p class="subtitle">
+        {{ mode === 'login' ? 'Dang nhap de truy cap he thong' : 'Dang ky tai khoan tren Keycloak' }}
+      </p>
+    </div>
+
+    <div class="switcher" role="tablist" aria-label="Chon che do">
+      <button type="button" class="switch-btn" [class.active]="mode === 'login'" (click)="setMode('login')">Dang
+        nhap</button>
+      <button type="button" class="switch-btn" [class.active]="mode === 'register'" (click)="setMode('register')">Dang
+        ky</button>
+    </div>
+
+    @if (mode === 'login') {
+    <form class="auth-form">
+      <label>Loai dang nhap Keycloak</label>
+      <div class="provider-grid" role="tablist" aria-label="Chon loai dang nhap keycloak">
+        <button type="button" class="provider-btn" [class.active]="loginProvider === 'provider-db'"
+          (click)="setLoginProvider('provider-db')">
+          <span class="provider-title">User Provider DB</span>
+          <span class="provider-desc">Xac thuc qua custom database provider</span>
+        </button>
+        <button type="button" class="provider-btn" [class.active]="loginProvider === 'remote-federation'"
+          (click)="setLoginProvider('remote-federation')">
+          <span class="provider-title">Remote Federation</span>
+          <span class="provider-desc">Xac thuc qua remote user federation</span>
+        </button>
+      </div>
+
+      <label for="login-email">Email</label>
+      <input id="login-email" type="email" placeholder="email@domain.com" [(ngModel)]="loginEmail" name="loginEmail" />
+
+      <label for="login-password">Mat khau</label>
+      <input id="login-password" type="password" placeholder="Nhap mat khau" [(ngModel)]="loginPassword"
+        name="loginPassword" />
+
+      <button type="button" class="submit-btn" (click)="login()">Dang nhap</button>
+      @if (loginMode === 'provider-db') {
+        <p class="subtitle">Ban dang o che do Provider DB: backend tu xac thuc local user.</p>
+      }
+      @if (loginMode === 'remote-federation') {
+        <p class="subtitle">Ban dang o che do Remote Federation: Keycloak thuc hien xac thuc va cap JWT.</p>
+      }
+    </form>
+    } @else {
+    <form class="auth-form">
+      <label for="register-name">Ho va ten</label>
+      <input id="register-name" type="text" placeholder="Nhap ho va ten" [(ngModel)]="registerName"
+        name="registerName" />
+
+      <label for="register-email">Email</label>
+      <input id="register-email" type="email" placeholder="email@domain.com" [(ngModel)]="registerEmail"
+        name="registerEmail" />
+
+      <label for="register-password">Mat khau</label>
+      <input id="register-password" type="password" placeholder="Toi thieu 6 ky tu" [(ngModel)]="registerPassword"
+        name="registerPassword" />
+
+      <label for="register-confirm">Xac nhan mat khau</label>
+      <input id="register-confirm" type="password" placeholder="Nhap lai mat khau" [(ngModel)]="registerConfirmPassword"
+        name="registerConfirmPassword" />
+
+      <button type="button" class="submit-btn" (click)="register()">Dang ky</button>
+    </form>
+    }
+
+    <p class="helper-text">
+      {{ mode === 'login' ? 'Chua co tai khoan?' : 'Da co tai khoan?' }}
+      <button type="button" class="text-link" (click)="setMode(mode === 'login' ? 'register' : 'login')">
+        {{ mode === 'login' ? 'Dang ky ngay' : 'Dang nhap ngay' }}
+      </button>
+    </p>
+  </section>
+
+  @if (token || loginMode === 'provider-db') {
+  <section class="crud-card" aria-label="User CRUD">
+    <h2>Quan ly User</h2>
+    @if (token) {
+      <p class="subtitle">Da dang nhap thanh cong. Token: {{ token.slice(0, 20) }}...</p>
+    } @else {
+      <p class="subtitle">Dang nhap local Provider DB thanh cong (khong dung JWT Keycloak).</p>
+    }
+
+    <div class="me-block">
+      <h3>Thong tin token (/me)</h3>
+      <pre>{{ me | json }}</pre>
+    </div>
+
+
+
+
+  </section>
+  }
+</main>

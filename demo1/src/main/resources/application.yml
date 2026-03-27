@@ -1,0 +1,46 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: demo1
+  datasource:
+    url: ${DB_URL:jdbc:h2:mem:demo1;MODE=PostgreSQL;DB_CLOSE_DELAY=-1}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  h2:
+    console:
+      enabled: true
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/master}
+
+keycloak:
+  auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL:http://localhost:8080}
+  realm: ${KEYCLOAK_REALM:master}
+
+  resource: ${KEYCLOAK_CLIENT_ID:demo-client}
+  credentials:
+    secret: ${KEYCLOAK_CLIENT_SECRET:}
+
+app:
+  keycloak:
+    provider-db:
+      client-id: ${APP_KEYCLOAK_PROVIDER_DB_CLIENT_ID:demo-client}
+      client-secret: ${KEYCLOAK_PROVIDER_DB_CLIENT_SECRET:${KEYCLOAK_CLIENT_SECRET:}}
+      token-uri: ${KEYCLOAK_PROVIDER_DB_TOKEN_URI:${KEYCLOAK_TOKEN_URI:}}
+    remote-federation:
+      client-id: ${APP_KEYCLOAK_REMOTE_FEDERATION_CLIENT_ID:demo-client}
+      client-secret: ${KEYCLOAK_REMOTE_FEDERATION_CLIENT_SECRET:${KEYCLOAK_CLIENT_SECRET:}}
+      token-uri: ${KEYCLOAK_REMOTE_FEDERATION_TOKEN_URI:${KEYCLOAK_TOKEN_URI:}}
+
+server:
+  port: 8081
+

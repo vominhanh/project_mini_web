@@ -1,0 +1,220 @@
+HUONG DAN TU CODE TAY TU DAU (BE -> FE)
+De tai: 1 user source, 2 cach dang nhap
+- provider-db: backend tu xac thuc local DB
+- remote-federation: Keycloak xac thuc va cap JWT
+
+====================================================================
+1) TONG QUAN KIEN TRUC
+====================================================================
+Thanh phan:
+1. demo1 (Spring Boot) - port 8081
+2. demo_fe (Angular) - port 4200
+3. Keycloak - port 8080
+4. PostgreSQL - db miniWeb
+
+Y tuong:
+- Dang ky: luu user vao bang app_user (PostgreSQL) cua demo1.
+- Dang nhap provider-db: demo1 tu check email/password (password hash BCrypt).
+- Dang nhap remote-federation: demo1 goi Keycloak token endpoint.
+
+====================================================================
+2) BACKEND SPRING BOOT (demo1)
+====================================================================
+2.1 Tao project va dependencies
+- spring-boot-starter-web
+- spring-boot-starter-data-jpa
+- spring-boot-starter-security
+- spring-boot-starter-oauth2-resource-server
+- spring-boot-starter-validation
+- postgresql (runtime)
+- h2 (runtime, fallback)
+
+2.2 Cau hinh application.yml
+Can co cac nhom:
+- spring.config.import: optional:file:.env[.properties]
+- spring.datasource.url/username/password (doc tu .env)
+- spring.jpa.hibernate.ddl-auto=update
+- spring.security.oauth2.resourceserver.jwt.issuer-uri
+- app.keycloak.provider-db.client-id/client-secret/token-uri
+- app.keycloak.remote-federation.client-id/client-secret/token-uri
+- server.port=8081
+
+Mau bien can co trong .env:
+- DB_URL=jdbc:postgresql://localhost:5432/miniWeb
+- DB_USERNAME=postgres
+- DB_PASSWORD=123321
+- KEYCLOAK_CLIENT_ID=demo-client
+- APP_KEYCLOAK_PROVIDER_DB_CLIENT_ID=demo-client
+- APP_KEYCLOAK_REMOTE_FEDERATION_CLIENT_ID=demo-client
+- (neu confidential) KEYCLOAK_CLIENT_SECRET=...
+
+2.3 Tao entity User
+Bang app_user:
+- id (Long, auto increment)
+- email (unique)
+- name
+- password (BCrypt hash)
+- createdAt
+
+Luu y:
+- Neu DB cu co data null, tranh set NOT NULL qua som de khoi dong app khong vo.
+- Sau khi du lieu sach, moi siet constraint lai.
+
+2.4 Tao UserRepository
+- existsByEmail(String email)
+- findByEmail(String email)
+- cac ham JpaRepository mac dinh
+
+2.5 Tao SecurityConfig
+- csrf disable
+- cors enable
+- permitAll cho /api/v1/auth/**
+- cac endpoint khac yeu cau authenticated
+- oauth2ResourceServer(jwt)
+- bean PasswordEncoder = BCryptPasswordEncoder
+
+2.6 Tao DTO
+- RegisterRequest(email, name, password)
+- TokenRequest(username, password)
+- TokenResponse(accessToken, refreshToken, expiresIn, tokenType)
+- UserPrincipalResponse
+
+2.7 Tao AuthController
+Can co endpoint:
+1) POST /api/v1/auth/register/provider-db
+   - validate input
+   - check email duplicate
+   - hash password bang BCrypt
+   - save vao app_user
+
+2) POST /api/v1/auth/token/provider-db
+   - tim user trong app_user theo email
+   - passwordEncoder.matches(...)
+   - neu dung: tra ve response local (hoac custom token rieng neu tu lam)
+   - neu sai: throw IllegalStateException("Sai tai khoan hoac mat khau")
+
+3) POST /api/v1/auth/token/remote-federation
+   - goi Keycloak token endpoint:
+     POST {issuer}/protocol/openid-connect/token
+     form:
+       client_id
+       (co the co client_secret)
+       username
+       password
+       grant_type=password
+   - neu thanh cong -> map access_token, refresh_token,...
+   - neu 401 -> tra loi chi tiet (clientId, tokenUri, responseBody)
+
+4) GET /api/v1/auth/me
+   - doc JWT principal va tra claims
+
+2.8 Tao UserController CRUD (neu can)
+- GET /api/v1/users
+- POST /api/v1/users
+- PUT /api/v1/users/{id}
+- DELETE /api/v1/users/{id}
+
+2.9 Chay backend
+- Tao db miniWeb truoc
+- Chay: ./mvnw spring-boot:run
+- Neu loi "port already in use":
+  netstat -ano | findstr :8081
+  taskkill /PID <PID> /F
+
+====================================================================
+3) KEYCLOAK SETUP
+====================================================================
+3.1 Tao/kiem tra client demo-client
+Trong realm (vi du master):
+- Client authentication:
+  + Off neu public client
+  + On neu confidential
+- Direct access grants: ON
+- Standard flow: ON (khong bat buoc cho password grant nhung co the de ON)
+
+3.2 Neu confidential
+- lay client secret
+- set vao .env:
+  KEYCLOAK_CLIENT_SECRET=...
+  KEYCLOAK_REMOTE_FEDERATION_CLIENT_SECRET=...
+
+3.3 Kiem tra token endpoint bang tay
+curl:
+curl -X POST "http://localhost:8080/realms/master/protocol/openid-connect/token" ^
+  -H "Content-Type: application/x-www-form-urlencoded" ^
+  -d "client_id=demo-client&grant_type=password&username=<u>&password=<p>"
+
+Neu tra invalid_grant => sai user/pass.
+Neu tra invalid_client/401 => sai client auth config.
+
+====================================================================
+4) FRONTEND ANGULAR (demo_fe)
+====================================================================
+4.1 App state co ban
+- mode: login/register
+- loginProvider: provider-db | remote-federation
+- token, me, users
+- registerName, registerEmail, registerPassword...
+
+4.2 Dang ky
+- POST /api/v1/auth/register/provider-db
+- thanh cong thi chuyen ve tab login
+
+4.3 Dang nhap
+- neu provider-db:
+  POST /api/v1/auth/token/provider-db
+  hien thi thong bao "backend tu xac thuc local user"
+
+- neu remote-federation:
+  POST /api/v1/auth/token/remote-federation
+  luu access_token vao localStorage
+  goi /api/v1/auth/me va /api/v1/users
+
+4.4 Xu ly 401 user experience
+- khi /api/v1/users tra 401:
+  + xoa token localStorage
+  + reset state
+  + khong can alert lien tuc khi vua vao trang
+
+4.5 Chay frontend
+- npm install
+- npm start
+- hard refresh browser Ctrl + F5 khi doi code/cau hinh
+
+====================================================================
+5) CHECKLIST TEST CUOI
+====================================================================
+[ ] Backend len duoc 8081
+[ ] Frontend len duoc 4200
+[ ] Dang ky luu vao app_user (PostgreSQL)
+[ ] Login provider-db pass voi user vua dang ky
+[ ] Login remote-federation pass neu user ton tai nguon Keycloak/federation
+[ ] /api/v1/auth/me tra claims khi co JWT
+
+====================================================================
+6) LOI THUONG GAP
+====================================================================
+1) 0 Unknown Error
+- backend khong chay, sai port, CORS, process cu
+
+2) Keycloak 401 invalid_client
+- client config sai (public/confidential)
+- chua bat Direct Access Grants
+- secret thieu/sai
+
+3) Hibernate migration loi NOT NULL
+- du lieu cu co null
+- xu ly du lieu cu hoac tam cho nullable
+
+4) Port already in use
+- taskkill PID cu, chay lai
+
+====================================================================
+7) GOI Y DE BAO CAO/DEMO
+====================================================================
+Nen trinh bay:
+- "Provider DB": backend tu xac thuc local DB
+- "Remote Federation": backend uy quyen cho Keycloak xac thuc
+- Cung 1 UI, chuyen doi 2 cach login bang switch provider
+
+Ket thuc.
