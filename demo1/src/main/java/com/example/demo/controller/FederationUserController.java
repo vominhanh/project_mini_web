@@ -69,7 +69,7 @@ public class FederationUserController {
 
     private void authorize(String apiKey) {
         if (federationApiKey == null || federationApiKey.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Federation API key is not configured");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Federation API key là không được cấu hình");
         }
         if (apiKey == null || !federationApiKey.equals(apiKey)) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid federation API key");
@@ -78,7 +78,7 @@ public class FederationUserController {
 
     private String normalizeUsername(String username) {
         if (username == null || username.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username không được để trống");
         }
         return username.trim();
     }
