@@ -1,9 +1,10 @@
 <main class="auth-page">
+  @if (!isAuthenticated()) {
   <section class="auth-card" aria-label="Authentication form">
     <div class="auth-header">
-      <h1>Keycloak Demo</h1>
+      <h1>Keycloak Demo Login</h1>
       <p class="subtitle">
-        {{ mode === 'login' ? 'Dang nhap de truy cap he thong' : 'Dang ky tai khoan tren Keycloak' }}
+        {{ mode === 'login' ? 'Dang nhap' : 'Dang ky tai khoan tren Keycloak' }}
       </p>
     </div>
 
@@ -16,20 +17,6 @@
 
     @if (mode === 'login') {
     <form class="auth-form">
-      <label>Loai dang nhap Keycloak</label>
-      <div class="provider-grid" role="tablist" aria-label="Chon loai dang nhap keycloak">
-        <button type="button" class="provider-btn" [class.active]="loginProvider === 'provider-db'"
-          (click)="setLoginProvider('provider-db')">
-          <span class="provider-title">User Provider DB</span>
-          <span class="provider-desc">Xac thuc qua custom database provider</span>
-        </button>
-        <button type="button" class="provider-btn" [class.active]="loginProvider === 'remote-federation'"
-          (click)="setLoginProvider('remote-federation')">
-          <span class="provider-title">Remote Federation</span>
-          <span class="provider-desc">Xac thuc qua remote user federation</span>
-        </button>
-      </div>
-
       <label for="login-email">Email</label>
       <input id="login-email" type="email" placeholder="email@domain.com" [(ngModel)]="loginEmail" name="loginEmail" />
 
@@ -38,30 +25,39 @@
         name="loginPassword" />
 
       <button type="button" class="submit-btn" (click)="login()">Dang nhap</button>
-      @if (loginMode === 'provider-db') {
-        <p class="subtitle">Ban dang o che do Provider DB: backend tu xac thuc local user.</p>
+      <button type="button" class="google-btn" (click)="loginGoogle($event)">Dang nhap bang Google Gmail</button>
+      <p class="subtitle">Ban se duoc chuyen sang trang Keycloak de dang nhap Gmail.</p>
+
+      @if (loginMode === 'keycloak-local') {
+      <p class="subtitle">Dang nhap bang user DB noi bo cua Keycloak (khong dung provider).</p>
       }
-      @if (loginMode === 'remote-federation') {
-        <p class="subtitle">Ban dang o che do Remote Federation: Keycloak thuc hien xac thuc va cap JWT.</p>
+      @if (loginMode === 'google') {
+      <p class="subtitle">Google Login: Keycloak xac thuc thong qua Identity Provider Google.</p>
       }
     </form>
     } @else {
     <form class="auth-form">
-      <label for="register-name">Ho va ten</label>
-      <input id="register-name" type="text" placeholder="Nhap ho va ten" [(ngModel)]="registerName"
-        name="registerName" />
+      <p class="subtitle">Dang ky user truc tiep vao bang users (bcrypt) thong qua custom API.</p>
+
+      <label for="register-firstname">First name</label>
+      <input id="register-firstname" type="text" placeholder="Nhap first name" [(ngModel)]="registerFirstName"
+        name="registerFirstName" />
+
+      <label for="register-lastname">Last name</label>
+      <input id="register-lastname" type="text" placeholder="Nhap last name" [(ngModel)]="registerLastName"
+        name="registerLastName" />
 
       <label for="register-email">Email</label>
       <input id="register-email" type="email" placeholder="email@domain.com" [(ngModel)]="registerEmail"
         name="registerEmail" />
 
       <label for="register-password">Mat khau</label>
-      <input id="register-password" type="password" placeholder="Toi thieu 6 ky tu" [(ngModel)]="registerPassword"
+      <input id="register-password" type="password" placeholder="Nhap mat khau" [(ngModel)]="registerPassword"
         name="registerPassword" />
 
-      <label for="register-confirm">Xac nhan mat khau</label>
-      <input id="register-confirm" type="password" placeholder="Nhap lai mat khau" [(ngModel)]="registerConfirmPassword"
-        name="registerConfirmPassword" />
+      <label for="register-confirm-password">Xac nhan mat khau</label>
+      <input id="register-confirm-password" type="password" placeholder="Nhap lai mat khau"
+        [(ngModel)]="registerConfirmPassword" name="registerConfirmPassword" />
 
       <button type="button" class="submit-btn" (click)="register()">Dang ky</button>
     </form>
@@ -74,22 +70,54 @@
       </button>
     </p>
   </section>
+  }
 
-  @if (token || loginMode === 'provider-db') {
+  @if (isAuthenticated()) {
   <section class="crud-card" aria-label="User CRUD">
-    <h2>Quan ly User</h2>
+    <div class="home-header">
+      <h2>Trang chu</h2>
+      <button type="button" class="logout-btn" (click)="logout()">Dang xuat</button>
+    </div>
+    <p class="subtitle">Dang nhap thanh cong. Ban co the dang xuat de chon cach dang nhap khac.</p>
+
+    @if (loginMode === 'keycloak-local') {
+    <p class="subtitle">Da dang nhap bang user trong database noi bo Keycloak.</p>
+    }
+    @if (loginMode === 'google') {
+    <p class="subtitle">Da dang nhap bang Google thong qua Keycloak.</p>
+    }
+
     @if (token) {
-      <p class="subtitle">Da dang nhap thanh cong. Token: {{ token.slice(0, 20) }}...</p>
+    <div class="me-block">
+      <h3>Access token (JWT)</h3>
+      <pre>{{ token }}</pre>
+      <p><strong>Bat dau:</strong> {{ accessTokenIssuedAt() }}</p>
+      <p><strong>Het han:</strong> {{ accessTokenExpiresAt() }}</p>
+      <p><strong>Thoi gian hieu luc:</strong> {{ accessTokenLifetime() }}</p>
+      <p><strong>Con lai:</strong> {{ accessTokenRemaining() }}</p>
+    </div>
+    }
+
+    @if (refreshToken) {
+    <div class="me-block">
+      <h3>Refresh token (JWT)</h3>
+      <pre>{{ refreshToken }}</pre>
+      <p><strong>Bat dau:</strong> {{ refreshTokenIssuedAt() }}</p>
+      <p><strong>Het han:</strong> {{ refreshTokenExpiresAt() }}</p>
+      <p><strong>Thoi gian hieu luc:</strong> {{ refreshTokenLifetime() }}</p>
+      <p><strong>Con lai:</strong> {{ refreshTokenRemaining() }}</p>
+    </div>
     } @else {
-      <p class="subtitle">Dang nhap local Provider DB thanh cong (khong dung JWT Keycloak).</p>
+    <div class="me-block">
+      <h3>Refresh token</h3>
+      <p>Khong co refresh token trong phan hoi token.</p>
+    </div>
     }
 
     <div class="me-block">
       <h3>Thong tin token (/me)</h3>
       <pre>{{ me | json }}</pre>
     </div>
-
-
 
 
   </section>

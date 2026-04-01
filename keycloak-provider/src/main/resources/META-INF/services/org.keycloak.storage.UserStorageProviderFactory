@@ -1,1 +1,1 @@
-com.myproject.keycloak.provider.DbUserStorageProviderFactory
+org.example.provider.CustomUserStorageProviderFactory

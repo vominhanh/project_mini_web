@@ -1,2 +1,9 @@
-C:\Users\avmin\IdeaProjects\Assigment1\keycloak-provider\src\main\java\com\myproject\keycloak\provider\DbUserStorageProvider.java
-C:\Users\avmin\IdeaProjects\Assigment1\keycloak-provider\src\main\java\com\myproject\keycloak\provider\DbUserStorageProviderFactory.java
+C:\Users\avmin\IdeaProjects\Assigment1\keycloak-provider\src\main\java\org\example\provider\RegisterRequest.java
+C:\Users\avmin\IdeaProjects\Assigment1\keycloak-provider\src\main\java\org\example\constants\JpaStorageProviderConstants.java
+C:\Users\avmin\IdeaProjects\Assigment1\keycloak-provider\src\main\java\org\example\Main.java
+C:\Users\avmin\IdeaProjects\Assigment1\keycloak-provider\src\main\java\org\example\model\User.java
+C:\Users\avmin\IdeaProjects\Assigment1\keycloak-provider\src\main\java\org\example\provider\CustomUserStorageProviderFactory.java
+C:\Users\avmin\IdeaProjects\Assigment1\keycloak-provider\src\main\java\org\example\provider\RegistrationRealmResourceProvider.java
+C:\Users\avmin\IdeaProjects\Assigment1\keycloak-provider\src\main\java\org\example\model\UserAdapter.java
+C:\Users\avmin\IdeaProjects\Assigment1\keycloak-provider\src\main\java\org\example\provider\CustomUserStorageProvider.java
+C:\Users\avmin\IdeaProjects\Assigment1\keycloak-provider\src\main\java\org\example\provider\RegistrationRealmResourceProviderFactory.java

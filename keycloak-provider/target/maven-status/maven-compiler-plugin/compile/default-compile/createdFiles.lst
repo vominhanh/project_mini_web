@@ -1,4 +1,9 @@
-com\myproject\keycloak\provider\DbUserStorageProvider$DbRow.class
-com\myproject\keycloak\provider\DbUserStorageProvider.class
-com\myproject\keycloak\provider\DbUserStorageProviderFactory.class
-com\myproject\keycloak\provider\DbUserStorageProvider$1.class
+org\example\provider\RegistrationRealmResourceProviderFactory.class
+org\example\model\UserAdapter.class
+org\example\model\User.class
+org\example\provider\CustomUserStorageProviderFactory.class
+org\example\Main.class
+org\example\provider\CustomUserStorageProvider.class
+org\example\constants\JpaStorageProviderConstants.class
+org\example\provider\RegisterRequest.class
+org\example\provider\RegistrationRealmResourceProvider.class

@@ -1,0 +1,16 @@
+{
+  "publicClient": true,
+  "clientAuthenticatorType": "none",
+  "directAccessGrantsEnabled": true,
+  "standardFlowEnabled": true,
+  "fullScopeAllowed": true,
+  "attributes": {
+    "post.logout.redirect.uris": "http://localhost:4200/*"
+  },
+  "redirectUris": [
+    "http://localhost:4200/*"
+  ],
+  "webOrigins": [
+    "http://localhost:4200"
+  ]
+}
