@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: demo1
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://127.0.0.1:8080/realms/master}
+
+keycloak:
+  auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL:http://127.0.0.1:8080}
+  realm: ${KEYCLOAK_REALM:master}
+
+app:
+  keycloak:
+    browser:
+      client-id: ${KEYCLOAK_BROWSER_CLIENT_ID:demo-fe}
+      client-secret: ${KEYCLOAK_BROWSER_CLIENT_SECRET:}
+      token-uri: ${KEYCLOAK_BROWSER_TOKEN_URI:http://127.0.0.1:8080/realms/master/protocol/openid-connect/token}
+      auth-uri: ${KEYCLOAK_BROWSER_AUTH_URI:http://127.0.0.1:8080/realms/master/protocol/openid-connect/auth}
+    remote-federation:
+      client-id: ${KEYCLOAK_REMOTE_CLIENT_ID:admin-cli}
+      client-secret: ${KEYCLOAK_REMOTE_CLIENT_SECRET:}
+      token-uri: ${KEYCLOAK_REMOTE_TOKEN_URI:http://127.0.0.1:8080/realms/master/protocol/openid-connect/token}
+
+server:
+  port: ${SERVER_PORT:8082}

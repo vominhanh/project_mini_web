@@ -28,8 +28,8 @@
       <button type="button" class="google-btn" (click)="loginGoogle($event)">Dang nhap bang Google Gmail</button>
       <p class="subtitle">Ban se duoc chuyen sang trang Keycloak de dang nhap Gmail.</p>
 
-      @if (loginMode === 'keycloak-local') {
-      <p class="subtitle">Dang nhap bang user DB noi bo cua Keycloak (khong dung provider).</p>
+      @if (loginMode === 'remote-federation') {
+      <p class="subtitle">Dang nhap qua BE, BE goi API Keycloak de xac thuc user storage provider.</p>
       }
       @if (loginMode === 'google') {
       <p class="subtitle">Google Login: Keycloak xac thuc thong qua Identity Provider Google.</p>
@@ -37,7 +37,7 @@
     </form>
     } @else {
     <form class="auth-form">
-      <p class="subtitle">Dang ky user truc tiep vao bang users (bcrypt) thong qua custom API.</p>
+      <p class="subtitle">Dang ky user qua BE, sau do BE goi Keycloak custom-register API.</p>
 
       <label for="register-firstname">First name</label>
       <input id="register-firstname" type="text" placeholder="Nhap first name" [(ngModel)]="registerFirstName"
@@ -80,8 +80,8 @@
     </div>
     <p class="subtitle">Dang nhap thanh cong. Ban co the dang xuat de chon cach dang nhap khac.</p>
 
-    @if (loginMode === 'keycloak-local') {
-    <p class="subtitle">Da dang nhap bang user trong database noi bo Keycloak.</p>
+    @if (loginMode === 'remote-federation') {
+    <p class="subtitle">Da dang nhap theo luong FE -> BE -> Keycloak.</p>
     }
     @if (loginMode === 'google') {
     <p class="subtitle">Da dang nhap bang Google thong qua Keycloak.</p>
@@ -91,10 +91,6 @@
     <div class="me-block">
       <h3>Access token (JWT)</h3>
       <pre>{{ token }}</pre>
-      <p><strong>Bat dau:</strong> {{ accessTokenIssuedAt() }}</p>
-      <p><strong>Het han:</strong> {{ accessTokenExpiresAt() }}</p>
-      <p><strong>Thoi gian hieu luc:</strong> {{ accessTokenLifetime() }}</p>
-      <p><strong>Con lai:</strong> {{ accessTokenRemaining() }}</p>
     </div>
     }
 
@@ -102,10 +98,6 @@
     <div class="me-block">
       <h3>Refresh token (JWT)</h3>
       <pre>{{ refreshToken }}</pre>
-      <p><strong>Bat dau:</strong> {{ refreshTokenIssuedAt() }}</p>
-      <p><strong>Het han:</strong> {{ refreshTokenExpiresAt() }}</p>
-      <p><strong>Thoi gian hieu luc:</strong> {{ refreshTokenLifetime() }}</p>
-      <p><strong>Con lai:</strong> {{ refreshTokenRemaining() }}</p>
     </div>
     } @else {
     <div class="me-block">
@@ -117,6 +109,24 @@
     <div class="me-block">
       <h3>Thong tin token (/me)</h3>
       <pre>{{ me | json }}</pre>
+    </div>
+
+    <div class="me-block">
+      <h3>Du lieu users tu Backend</h3>
+      @if (users.length === 0) {
+      <p>Chua co user hoac khong tai duoc danh sach.</p>
+      } @else {
+      <div class="crud-list">
+        @for (user of users; track user.id) {
+        <div class="user-row">
+          <div>
+            <strong>{{ user.email }}</strong>
+            <div class="muted">{{ user.name }} | ID: {{ user.id }}</div>
+          </div>
+        </div>
+        }
+      </div>
+      }
     </div>
 
 

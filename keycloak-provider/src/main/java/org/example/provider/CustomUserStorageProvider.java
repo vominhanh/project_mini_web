@@ -382,6 +382,24 @@ public class CustomUserStorageProvider implements UserStorageProvider, UserRegis
         return Stream.empty();
     }
 
+    @Override
+    public int getUsersCount(RealmModel realm, boolean includeServiceAccount) {
+        if (!hasConnection()) {
+            return 0;
+        }
+
+        String query = "SELECT COUNT(*) AS total FROM users";
+        try (PreparedStatement stmt = connection.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt("total");
+            }
+        } catch (SQLException e) {
+            logger.error("Error counting users", e);
+        }
+        return 0;
+    }
+
     private String hashPassword(String plainPassword) {
         return BCrypt.withDefaults().hashToString(12, plainPassword.toCharArray());
     }
