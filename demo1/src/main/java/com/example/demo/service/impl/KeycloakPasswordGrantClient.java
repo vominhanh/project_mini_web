@@ -27,6 +27,7 @@ final class KeycloakPasswordGrantClient {
         if (clientId.isBlank()) {
             throw new IllegalStateException("Chua cau hinh clientId cho " + sourceLabel);
         }
+
         HttpEntity<MultiValueMap<String, String>> entity = buildEntity(request, clientId, clientSecret);
         try {
             @SuppressWarnings("unchecked")
@@ -39,6 +40,7 @@ final class KeycloakPasswordGrantClient {
             String wwwAuthenticate = ex.getResponseHeaders() == null
                 ? null
                 : ex.getResponseHeaders().getFirst(HttpHeaders.WWW_AUTHENTICATE);
+                
             throw new IllegalStateException(
                     "Keycloak " + sourceLabel + " token error: HTTP " + ex.getStatusCode().value()
                             + " (clientId=" + clientId + ", secretProvided=" + (!clientSecret.isBlank()) + ")"
@@ -69,6 +71,7 @@ final class KeycloakPasswordGrantClient {
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("client_id", clientId);
         form.add("grant_type", PASSWORD_GRANT);
+        form.add("scope", "openid profile email roles");
         form.add("username", request.getUsername().trim());
         form.add("password", request.getPassword());
         if (!clientSecret.isBlank()) {
@@ -82,11 +85,15 @@ final class KeycloakPasswordGrantClient {
         Object refreshToken = body == null ? null : body.get("refresh_token");
         Object expiresIn = body == null ? null : body.get("expires_in");
         Object tokenType = body == null ? null : body.get("token_type");
+        String token = accessToken == null ? "" : accessToken.toString();
+        java.util.List<String> roles = TokenRoleResolver.extractRoles(token);
         return new TokenResponse(
-                accessToken == null ? "" : accessToken.toString(),
+                token,
                 refreshToken == null ? null : refreshToken.toString(),
                 expiresIn == null ? 0 : Integer.parseInt(expiresIn.toString()),
-                tokenType == null ? "Bearer" : tokenType.toString()
+                tokenType == null ? "Bearer" : tokenType.toString(),
+                TokenRoleResolver.resolveEffectiveRole(roles),
+                roles
         );
     }
 

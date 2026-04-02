@@ -13,14 +13,18 @@ keycloak:
   realm: ${KEYCLOAK_REALM:master}
 
 app:
+  auth:
+    google:
+      redirect-uri: ${APP_AUTH_GOOGLE_REDIRECT_URI:http://localhost:4200/}
   keycloak:
     browser:
       client-id: ${KEYCLOAK_BROWSER_CLIENT_ID:demo-fe}
       client-secret: ${KEYCLOAK_BROWSER_CLIENT_SECRET:}
       token-uri: ${KEYCLOAK_BROWSER_TOKEN_URI:http://127.0.0.1:8080/realms/master/protocol/openid-connect/token}
       auth-uri: ${KEYCLOAK_BROWSER_AUTH_URI:http://127.0.0.1:8080/realms/master/protocol/openid-connect/auth}
+
     remote-federation:
-      client-id: ${KEYCLOAK_REMOTE_CLIENT_ID:admin-cli}
+      client-id: demo-fe
       client-secret: ${KEYCLOAK_REMOTE_CLIENT_SECRET:}
       token-uri: ${KEYCLOAK_REMOTE_TOKEN_URI:http://127.0.0.1:8080/realms/master/protocol/openid-connect/token}
 

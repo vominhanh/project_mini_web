@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -14,6 +16,8 @@ public class TokenResponse {
     private String refreshToken;
     private int expiresIn;
     private String tokenType;
+    private String effectiveRole;
+    private List<String> roles;
 
 }
 

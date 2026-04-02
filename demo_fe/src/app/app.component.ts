@@ -32,8 +32,15 @@ export class AppComponent {
   refreshToken: string | null = null;
   lastTokenResponse: any = null;
   private readonly popStateHandler = () => this.syncRouteWithAuth();
-  me: any = null;
   users: any[] = [];
+  userInfo: any = null;
+  authView = {
+    effectiveRole: 'user',
+    roles: [] as string[],
+    canViewUsers: false,
+    homeTitle: 'Trang chu nguoi dung',
+    homeDescription: 'Tai khoan user thong thuong. Giao dien don gian.'
+  };
 
   setMode(nextMode: 'login' | 'register'): void {
     this.mode = nextMode;
@@ -63,8 +70,7 @@ export class AppComponent {
         this.loginMode = 'remote-federation';
       }
 
-      this.loadMe();
-      this.loadUsers();
+      this.loadView();
     }
     this.syncRouteWithAuth();
   }
@@ -120,15 +126,6 @@ export class AppComponent {
     this.registerToExternalDatabase();
   }
 
-  loadMe(): void {
-    this.http.get(this.backendMeEndpoint(), { headers: this.authHeaders() }).subscribe({
-      next: (res) => (this.me = res),
-      error: () => {
-        this.me = null;
-      }
-    });
-  }
-
   loadUsers(): void {
     this.http.get<any[]>(this.backendUsersEndpoint(), { headers: this.authHeaders() }).subscribe({
       next: (res) => {
@@ -154,12 +151,42 @@ export class AppComponent {
     });
   }
 
+  forgotPassword(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    const redirectUri = this.googleRedirectUri();
+    this.http.get<{ url: string }>(this.backendForgotPasswordUrlEndpoint(), {
+      params: { redirectUri }
+    }).subscribe({
+      next: (res) => {
+        const url = (res?.url || '').trim();
+        if (!url) {
+          alert('Khong tao duoc link quen mat khau.');
+          return;
+        }
+        window.location.href = url;
+      },
+      error: (err) => {
+        alert(`Khong lay duoc link quen mat khau: ${err?.error?.message ?? err?.message ?? err}`);
+      }
+    });
+  }
+
   private clearSession(): void {
     this.token = '';
     this.refreshToken = null;
     this.lastTokenResponse = null;
-    this.me = null;
     this.users = [];
+    this.userInfo = null;
+    this.authView = {
+      effectiveRole: 'user',
+      roles: [],
+      canViewUsers: false,
+      homeTitle: 'Trang chu nguoi dung',
+      homeDescription: 'Tai khoan user thong thuong. Giao dien don gian.'
+    };
     this.loginMode = 'none';
     this.mode = 'login';
     this.loginPassword = '';
@@ -197,8 +224,9 @@ export class AppComponent {
       return;
     }
 
+    const redirectUri = this.googleRedirectUri();
     this.http.get<{ url: string }>(this.backendGoogleAuthUrlEndpoint(), {
-      params: { redirectUri: this.redirectUri() }
+      params: { redirectUri }
     }).subscribe({
       next: (res) => {
         const url = (res?.url || '').trim();
@@ -209,6 +237,7 @@ export class AppComponent {
         window.location.href = url;
       },
       error: (err) => {
+
         alert(`Khong tao duoc URL dang nhap Google: ${err?.error?.message ?? err.message ?? err}`);
       }
     });
@@ -235,14 +264,18 @@ export class AppComponent {
 
     const payload = {
       code,
-      redirectUri: this.redirectUri()
+      redirectUri: this.googleRedirectUri()
     };
 
     this.http.post<any>(this.backendGoogleTokenEndpoint(), payload, {
       headers: new HttpHeaders({ 'Content-Type': 'application/json' })
     }).subscribe({
-      next: (res) => this.storeTokenResponse(res, 'google'),
+      next: (res) => {
+
+        this.storeTokenResponse(res, 'google');
+      },
       error: (err) => {
+
         alert(`Khong doi duoc token Google qua BE/Keycloak: ${err?.error?.error_description ?? err?.error?.message ?? err.message ?? err}`);
         this.navigateTo('/', true);
       }
@@ -315,9 +348,39 @@ export class AppComponent {
       return;
     }
 
-    this.loadMe();
-    this.loadUsers();
+    this.loadView();
     this.navigateTo('/home');
+  }
+
+  private loadView(): void {
+    this.http.get<any>(this.backendViewEndpoint(), { headers: this.authHeaders() }).subscribe({
+      next: (res) => {
+        this.authView = {
+          effectiveRole: (res?.effectiveRole ?? 'user') === 'admin' ? 'Admin' : 'User',
+          roles: Array.isArray(res?.roles) ? res.roles : [],
+          canViewUsers: !!res?.canViewUsers,
+          homeTitle: res?.homeTitle ?? 'Trang chu nguoi dung',
+          homeDescription: res?.homeDescription ?? 'Tai khoan user thong thuong. Giao dien don gian.'
+        };
+        this.loadGetInfo();
+        if (this.authView.canViewUsers) {
+          this.loadUsers();
+        } else {
+          this.users = [];
+        }
+      },
+      error: () => {
+        this.authView = {
+          effectiveRole: 'user',
+          roles: [],
+          canViewUsers: false,
+          homeTitle: 'Trang chu nguoi dung',
+          homeDescription: 'Tai khoan user thong thuong. Giao dien don gian.'
+        };
+        this.users = [];
+        this.userInfo = null;
+      }
+    });
   }
 
   private backendRemoteTokenEndpoint(): string {
@@ -336,22 +399,47 @@ export class AppComponent {
     return `${this.backendBaseUrl}/api/v1/auth/google/auth-url`;
   }
 
-  private backendLogoutEndpoint(): string {
-    return `${this.backendBaseUrl}/api/v1/auth/logout`;
-  }
-
-  private backendMeEndpoint(): string {
-    return `${this.backendBaseUrl}/api/v1/auth/me`;
-  }
-
-  private backendUsersEndpoint(): string {
-    return `${this.backendBaseUrl}/api/v1/users`;
-  }
-
-  private redirectUri(): string {
+  private googleRedirectUri(): string {
     if (!isPlatformBrowser(this.platformId)) {
       return 'http://localhost:4200/';
     }
     return `${window.location.origin}/`;
   }
+
+  private backendLogoutEndpoint(): string {
+    return `${this.backendBaseUrl}/api/v1/auth/logout`;
+  }
+
+  private backendUsersEndpoint(): string {
+    return `${this.backendBaseUrl}/api/v1/auth/me`;
+  }
+
+  private backendForgotPasswordUrlEndpoint(): string {
+    return `${this.backendBaseUrl}/api/v1/auth/forgot-password/url`;
+  }
+
+  private backendViewEndpoint(): string {
+    return `${this.backendBaseUrl}/api/v1/auth/view`;
+  }
+
+  private loadGetInfo(): void {
+    if (!this.token) {
+      this.userInfo = null;
+      return;
+    }
+
+    this.http.get<any>(this.backendGetInfoEndpoint(), { headers: this.authHeaders() }).subscribe({
+      next: (res) => {
+        this.userInfo = res ?? null;
+      },
+      error: () => {
+        this.userInfo = null;
+      }
+    });
+  }
+
+  private backendGetInfoEndpoint(): string {
+    return `${this.backendBaseUrl}/api/v1/auth/getinfo`;
+  }
+
 }

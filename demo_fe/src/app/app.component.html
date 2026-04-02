@@ -24,6 +24,10 @@
       <input id="login-password" type="password" placeholder="Nhap mat khau" [(ngModel)]="loginPassword"
         name="loginPassword" />
 
+      <p class="forgot-password">
+        <button type="button" class="text-link" (click)="forgotPassword()">Quen mat khau?</button>
+      </p>
+
       <button type="button" class="submit-btn" (click)="login()">Dang nhap</button>
       <button type="button" class="google-btn" (click)="loginGoogle($event)">Dang nhap bang Google Gmail</button>
       <p class="subtitle">Ban se duoc chuyen sang trang Keycloak de dang nhap Gmail.</p>
@@ -75,17 +79,16 @@
   @if (isAuthenticated()) {
   <section class="crud-card" aria-label="User CRUD">
     <div class="home-header">
-      <h2>Trang chu</h2>
+      <h2>{{ authView.homeTitle }}</h2>
       <button type="button" class="logout-btn" (click)="logout()">Dang xuat</button>
     </div>
-    <p class="subtitle">Dang nhap thanh cong. Ban co the dang xuat de chon cach dang nhap khac.</p>
+    <p class="subtitle">{{ authView.homeDescription }}</p>
+    <p class="role-line">
+      Vai tro: <strong>{{ authView.effectiveRole }}</strong>
+    </p>
 
-    @if (loginMode === 'remote-federation') {
-    <p class="subtitle">Da dang nhap theo luong FE -> BE -> Keycloak.</p>
-    }
-    @if (loginMode === 'google') {
-    <p class="subtitle">Da dang nhap bang Google thong qua Keycloak.</p>
-    }
+
+
 
     @if (token) {
     <div class="me-block">
@@ -106,13 +109,37 @@
     </div>
     }
 
+    @if (userInfo) {
     <div class="me-block">
-      <h3>Thong tin token (/me)</h3>
-      <pre>{{ me | json }}</pre>
-    </div>
+      <h3>User email & role</h3>
+      <p>
+        Email:
+        <strong>
+          {{
+          (userInfo?.currentUser?.email && userInfo.currentUser.email.trim().length > 0)
+          ? userInfo.currentUser.email
+          : (userInfo?.currentUser?.username || '-')
+          }}
+        </strong>
+      </p>
+      <p>
+        Name: <strong>{{ userInfo?.currentUser?.name || '-' }}</strong>
+      </p>
+      <p>
+        Role: <strong>{{ userInfo?.currentUser?.effectiveRole || '-' }}</strong>
+      </p>
+      <p class="muted">
+        Roles claim:
+        {{ (userInfo?.currentUser?.roles && userInfo.currentUser.roles.length) ? userInfo.currentUser.roles.join(', ') :
+        '-' }}
+      </p>
 
+    </div>
+    }
+
+    @if (authView.canViewUsers) {
     <div class="me-block">
-      <h3>Du lieu users tu Backend</h3>
+      <h3>Danh sach users (/api/v1/auth/me)</h3>
       @if (users.length === 0) {
       <p>Chua co user hoac khong tai duoc danh sach.</p>
       } @else {
@@ -128,6 +155,12 @@
       </div>
       }
     </div>
+    } @else {
+    <div class="me-block">
+      <h3>Giao dien user</h3>
+      <p>Tai khoan hien tai khong co role admin, nen an khu vuc quan ly users.</p>
+    </div>
+    }
 
 
   </section>

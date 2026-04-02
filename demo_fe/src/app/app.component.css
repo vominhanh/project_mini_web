@@ -172,6 +172,12 @@ input:focus {
     color: #4f6378;
 }
 
+.forgot-password {
+    margin: -4px 0 2px;
+    font-size: 13px;
+    color: #4f6378;
+}
+
 .text-link {
     border: none;
     background: transparent;
@@ -183,9 +189,9 @@ input:focus {
 
 .crud-card {
     width: 100%;
-    max-width: 620px;
+    max-width: 100%;
     background: #ffffff;
-    border: 1px solid #d9e0e7;
+    border: solid #d9e0e7;
     border-radius: 12px;
     padding: 24px;
     box-shadow: 0 8px 20px rgba(38, 57, 77, 0.08);
@@ -193,6 +199,12 @@ input:focus {
 
 .crud-card h2 {
     margin-top: 0;
+}
+
+.role-line {
+    margin: 6px 0 14px;
+    font-size: 14px;
+    color: #2e4358;
 }
 
 .home-header {
