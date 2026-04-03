@@ -11,6 +11,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Locale;
 
 public class UserAdapter extends AbstractUserAdapterFederatedStorage {
 
@@ -32,7 +33,9 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
 
     @Override
     public void setUsername(String s) {
-        user.setUsername(s);
+        String normalized = s == null ? null : s.trim().toLowerCase(Locale.ROOT);
+        user.setUsername(normalized);
+        updateDatabase("username", normalized);
     }
 
     @Override
@@ -59,10 +62,13 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
         return user.getPassword();
     }
 
-    @Override
+    @Overridedocker build -t keycloak-custom:latest .
+    docker run --rm -p 8080:8080 keycloak-custom:latest
     public void setEmail(String email) {
-        super.setEmail(email);
-        updateDatabase("email", email);
+        String normalized = email == null ? null : email.trim().toLowerCase(Locale.ROOT);
+        user.setEmail(normalized);
+        super.setEmail(normalized);
+        updateDatabase("email", normalized);
     }
 
     @Override

@@ -16,6 +16,13 @@ RUN chown -R keycloak:keycloak /opt/keycloak/providers/
 USER keycloak
 ENV KC_HEALTH_ENABLED=true
 ENV KC_METRICS_ENABLED=true
+
+ENV KC_HOSTNAME_STRICT=false
 ENV KEYCLOAK_ADMIN=admin
 ENV KEYCLOAK_ADMIN_PASSWORD=admin123
+
+ENV USER_STORAGE_JDBC_URL=jdbc:postgresql://host.docker.internal:5432/miniWeb
+ENV USER_STORAGE_JDBC_USER=postgres
+ENV USER_STORAGE_JDBC_PASSWORD=123321
+EXPOSE 8080
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start-dev"]

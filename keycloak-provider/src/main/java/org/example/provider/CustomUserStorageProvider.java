@@ -408,8 +408,21 @@ public class CustomUserStorageProvider implements UserStorageProvider, UserRegis
         if (hashedPassword == null || hashedPassword.isBlank()) {
             return false;
         }
-        BCrypt.Result result = BCrypt.verifyer().verify(plainPassword.toCharArray(), hashedPassword);
-        return result.verified;
+        // Nếu stored password có dạng bcrypt ($2a$/$2b$/$2y$/...) thì verify theo BCrypt.
+        // Nếu không đúng dạng bcrypt (ví dụ bạn insert dữ liệu mẫu với password dạng plain),
+        // thì so sánh plaintext để dev/test vẫn đăng nhập được.
+        if (isProbablyBcryptHash(hashedPassword)) {
+            BCrypt.Result result = BCrypt.verifyer().verify(plainPassword.toCharArray(), hashedPassword);
+            return result.verified;
+        }
+        return plainPassword.equals(hashedPassword);
+    }
+
+    private boolean isProbablyBcryptHash(String value) {
+        // BCrypt hash thường có dạng: $2a$<cost>$<22char salt + 31char hash>
+        return value != null
+                && (value.startsWith("$2a$") || value.startsWith("$2b$") || value.startsWith("$2y$") || value.startsWith("$2x$"))
+                && value.length() >= 10;
     }
 
 }

@@ -10,7 +10,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Optional;
 
 public class CustomUserStorageProviderFactory implements UserStorageProviderFactory<CustomUserStorageProvider> {
 
@@ -38,9 +37,19 @@ public class CustomUserStorageProviderFactory implements UserStorageProviderFact
         SQLException lastException = null;
         while (attempts < 3) {
             try {
-                String jdbcUrl = getSetting("KC_PROVIDER_DB_URL", DEFAULT_URL);
-                String jdbcUser = getSetting("KC_PROVIDER_DB_USER", DEFAULT_USER);
-                String jdbcPassword = getSetting("KC_PROVIDER_DB_PASSWORD", DEFAULT_PASSWORD);
+                // Không dùng tiền tố KC_* — Keycloak map KC_* sang cấu hình server và có thể gây lỗi build.
+                String jdbcUrl = firstNonBlank(
+                        System.getenv("USER_STORAGE_JDBC_URL"),
+                        System.getenv("KC_PROVIDER_DB_URL"),
+                        DEFAULT_URL);
+                String jdbcUser = firstNonBlank(
+                        System.getenv("USER_STORAGE_JDBC_USER"),
+                        System.getenv("KC_PROVIDER_DB_USER"),
+                        DEFAULT_USER);
+                String jdbcPassword = firstNonBlank(
+                        System.getenv("USER_STORAGE_JDBC_PASSWORD"),
+                        System.getenv("KC_PROVIDER_DB_PASSWORD"),
+                        DEFAULT_PASSWORD);
                 Connection connection = DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcPassword);
                 ensureUsersTable(connection);
                 logger.info("Successfully connected to the PostgreSQL database.");
@@ -80,11 +89,19 @@ public class CustomUserStorageProviderFactory implements UserStorageProviderFact
         }
     }
 
-    private String getSetting(String envKey, String fallback) {
-        return Optional.ofNullable(System.getenv(envKey))
-                .map(String::trim)
-                .filter(value -> !value.isEmpty())
-                .orElse(fallback);
+    private static String firstNonBlank(String... values) {
+        if (values == null) {
+            return "";
+        }
+        for (String v : values) {
+            if (v != null) {
+                String t = v.trim();
+                if (!t.isEmpty()) {
+                    return t;
+                }
+            }
+        }
+        return "";
     }
 
     @Override

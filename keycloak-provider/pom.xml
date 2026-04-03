@@ -80,6 +80,8 @@
                         </goals>
                         <configuration>
                             <includeScope>runtime</includeScope>
+                            <!-- checker-qual gây NPE trong kc.sh build (Quarkus OpenContainerPathTree) khi để trong providers/ -->
+                            <excludeArtifactIds>checker-qual</excludeArtifactIds>
                             <outputDirectory>${project.build.directory}/dependency</outputDirectory>
                         </configuration>
                     </execution>
