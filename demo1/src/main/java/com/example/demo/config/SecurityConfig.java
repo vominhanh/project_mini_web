@@ -1,10 +1,13 @@
 package com.example.demo.config;
 
+import com.example.demo.service.impl.TokenRoleResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -16,7 +19,21 @@ import java.util.List;
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            var roles = TokenRoleResolver.extractRoles(jwt.getTokenValue());
+            if ("admin".equalsIgnoreCase(TokenRoleResolver.resolveEffectiveRole(roles))) {
+                return List.of(new SimpleGrantedAuthority("ROLE_ADMIN"));
+            }
+            return List.of();
+        });
+        return converter;
+    }
+
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationConverter jwtAuthenticationConverter)
+            throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
@@ -26,9 +43,11 @@ public class SecurityConfig {
                                 "/api/v1/auth/**",
                                 "/error"
                         ).permitAll()
+                        .requestMatchers("/api/reports/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(
+                        jwtAuthenticationConverter)));
         return http.build();
     }
 

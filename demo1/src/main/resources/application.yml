@@ -2,6 +2,12 @@ spring:
   application:
     name: demo1
 
+  datasource:
+    url: ${JASPER_DATASOURCE_URL:jdbc:postgresql://localhost:5432/miniWeb}
+    username: ${JASPER_DATASOURCE_USERNAME:postgres}
+    password: ${JASPER_DATASOURCE_PASSWORD:123321}
+    driver-class-name: org.postgresql.Driver
+
   security:
     oauth2:
       resourceserver:

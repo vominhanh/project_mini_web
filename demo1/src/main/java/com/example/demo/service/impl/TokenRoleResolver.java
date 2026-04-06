@@ -11,11 +11,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-final class TokenRoleResolver {
+public final class TokenRoleResolver {
     private TokenRoleResolver() {
     }
 
-    static List<String> extractRoles(String accessToken) {
+    public static List<String> extractRoles(String accessToken) {
         Map<String, Object> claims = parseClaims(accessToken);
         if (claims.isEmpty()) {
             return List.of();
@@ -123,7 +123,7 @@ final class TokenRoleResolver {
         }
     }
 
-    static String resolveEffectiveRole(List<String> roles) {
+    public static String resolveEffectiveRole(List<String> roles) {
         if (roles == null || roles.isEmpty()) {
             return "user";
         }

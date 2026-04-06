@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fontFamilies>
+	<fontFamily name="Times New Roman">
+		<normal>net/sf/jasperreports/fonts/dejavu/DejaVuSerif.ttf</normal>
+		<bold>net/sf/jasperreports/fonts/dejavu/DejaVuSerif-Bold.ttf</bold>
+		<italic>net/sf/jasperreports/fonts/dejavu/DejaVuSerif-Italic.ttf</italic>
+		<boldItalic>net/sf/jasperreports/fonts/dejavu/DejaVuSerif-BoldItalic.ttf</boldItalic>
+		<pdfEncoding>Identity-H</pdfEncoding>
+		<pdfEmbedded>true</pdfEmbedded>
+	</fontFamily>
+	<fontFamily name="Helvetica">
+		<normal>net/sf/jasperreports/fonts/dejavu/DejaVuSans.ttf</normal>
+		<bold>net/sf/jasperreports/fonts/dejavu/DejaVuSans-Bold.ttf</bold>
+		<italic>net/sf/jasperreports/fonts/dejavu/DejaVuSans-Oblique.ttf</italic>
+		<boldItalic>net/sf/jasperreports/fonts/dejavu/DejaVuSans-BoldOblique.ttf</boldItalic>
+		<pdfEncoding>Identity-H</pdfEncoding>
+		<pdfEmbedded>true</pdfEmbedded>
+	</fontFamily>
+	<fontFamily name="DejaVu Sans">
+		<normal>net/sf/jasperreports/fonts/dejavu/DejaVuSans.ttf</normal>
+		<bold>net/sf/jasperreports/fonts/dejavu/DejaVuSans-Bold.ttf</bold>
+		<italic>net/sf/jasperreports/fonts/dejavu/DejaVuSans-Oblique.ttf</italic>
+		<boldItalic>net/sf/jasperreports/fonts/dejavu/DejaVuSans-BoldOblique.ttf</boldItalic>
+		<pdfEncoding>Identity-H</pdfEncoding>
+		<pdfEmbedded>true</pdfEmbedded>
+	</fontFamily>
+</fontFamilies>

@@ -32,6 +32,13 @@
     gap: 10px;
 }
 
+.export-actions.row {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
 .ghost-btn,
 .primary-btn {
     height: 38px;
@@ -71,6 +78,42 @@
     color: #23405a;
 }
 
+.upload-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.file-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    color: #35516d;
+}
+
+.file-field input[type="file"] {
+    border: 1px solid #c7d8ea;
+    border-radius: 8px;
+    padding: 6px;
+    background: #fff;
+}
+
+.hint {
+    margin: 8px 0 12px;
+    font-size: 12px;
+    color: #4a6178;
+}
+
+.error-text {
+    color: #b42318;
+    background: #fef3f2;
+    border: 1px solid #ffd5d2;
+    padding: 8px;
+    border-radius: 8px;
+}
+
 .panel pre {
     margin: 0;
     max-height: 380px;
@@ -105,6 +148,10 @@
     }
 
     .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .upload-grid {
         grid-template-columns: 1fr;
     }
 }

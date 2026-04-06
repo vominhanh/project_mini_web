@@ -44,6 +44,9 @@ export class AppComponent {
     homeDescription: 'Tai khoan user thong thuong. Giao dien don gian.'
   };
 
+  /** Da nhan /view xong (de chan /export truoc khi biet role). */
+  private authViewLoaded = false;
+
   setMode(nextMode: 'login' | 'register'): void {
     this.mode = nextMode;
   }
@@ -94,7 +97,20 @@ export class AppComponent {
       return;
     }
 
-    if (this.isAuthenticated() && path !== '/' && path !== '/home' && path !== '/export') {
+    if (!this.isAuthenticated()) {
+      return;
+    }
+
+    if (!this.authViewLoaded) {
+      return;
+    }
+
+    if (path === '/export' && !this.authView.canViewUsers) {
+      this.navigateTo('/home', true);
+      return;
+    }
+
+    if (path !== '/' && path !== '/home' && path !== '/export') {
       this.navigateTo('/home', true);
     }
   }
@@ -107,7 +123,7 @@ export class AppComponent {
   }
 
   goToExport(): void {
-    if (!this.isAuthenticated()) {
+    if (!this.isAuthenticated() || !this.authView.canViewUsers) {
       return;
     }
     this.navigateTo('/export');
@@ -203,6 +219,7 @@ export class AppComponent {
   }
 
   private clearSession(): void {
+    this.authViewLoaded = false;
     this.token = '';
     this.refreshToken = null;
     this.lastTokenResponse = null;
@@ -390,12 +407,14 @@ export class AppComponent {
           homeTitle: res?.homeTitle ?? 'Trang chu nguoi dung',
           homeDescription: res?.homeDescription ?? 'Tai khoan user thong thuong. Giao dien don gian.'
         };
+        this.authViewLoaded = true;
         this.loadGetInfo();
         if (this.authView.canViewUsers) {
           this.loadUsers();
         } else {
           this.users = [];
         }
+        this.syncRouteWithAuth();
       },
       error: () => {
         this.authView = {
@@ -407,6 +426,8 @@ export class AppComponent {
         };
         this.users = [];
         this.userInfo = null;
+        this.authViewLoaded = true;
+        this.syncRouteWithAuth();
       }
     });
   }

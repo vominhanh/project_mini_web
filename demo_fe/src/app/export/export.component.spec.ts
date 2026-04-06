@@ -1,3 +1,4 @@
+import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ExportComponent } from './export.component';
@@ -8,7 +9,8 @@ describe('ExportComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ExportComponent]
+      imports: [ExportComponent],
+      providers: [provideHttpClient()]
     })
     .compileComponents();
 

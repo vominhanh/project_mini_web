@@ -396,7 +396,7 @@ public class RemoteFederationAuthServiceImpl implements RemoteFederationAuthServ
     }
 
     @Override
-    public String getForgotPasswordUrl(String redirectUri) {
+    public String getResetPasswordUrl(String redirectUri) {
         if (redirectUri == null || redirectUri.isBlank()) {
             throw new IllegalArgumentException("Redirect URI khong hop le");
         }

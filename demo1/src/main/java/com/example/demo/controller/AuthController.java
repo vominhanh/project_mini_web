@@ -62,7 +62,7 @@ public class AuthController {
     @GetMapping("/forgot-password/url")
     public Map<String, String> forgotPasswordUrl(@RequestParam(required = false) String redirectUri) {
         redirectUri = resolveRedirectUri(redirectUri);
-        return Map.of("url", remoteFederationAuthService.getForgotPasswordUrl(redirectUri));
+        return Map.of("url", remoteFederationAuthService.getResetPasswordUrl(redirectUri));
     }
 
     @GetMapping("/view")

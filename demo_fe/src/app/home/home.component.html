@@ -2,7 +2,9 @@
     <div class="home-header">
         <h2 class="home-title">{{ authView.homeTitle }}</h2>
         <div class="home-actions">
-            <button type="button" class="export-btn" (click)="goExport()">Xuat du lieu</button>
+            @if (authView.canViewUsers) {
+            <button type="button" class="export-btn" (click)="goExport()">Xuat bao cao (admin)</button>
+            }
             <button type="button" class="logout-btn" (click)="logout()">Dang xuat</button>
         </div>
     </div>
