@@ -12,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Stream;
 
 public class UserAdapter extends AbstractUserAdapterFederatedStorage {
 
@@ -62,13 +63,37 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
         return user.getPassword();
     }
 
-    @Overridedocker build -t keycloak-custom:latest .
-    docker run --rm -p 8080:8080 keycloak-custom:latest
+    @Override
     public void setEmail(String email) {
         String normalized = email == null ? null : email.trim().toLowerCase(Locale.ROOT);
         user.setEmail(normalized);
         super.setEmail(normalized);
         updateDatabase("email", normalized);
+    }
+
+    @Override
+    public boolean isEmailVerified() {
+        return true;
+    }
+
+    @Override
+    public void setEmailVerified(boolean verified) {
+        // External user storage does not persist email verification state.
+    }
+
+    @Override
+    public Stream<String> getRequiredActionsStream() {
+        return Stream.empty();
+    }
+
+    @Override
+    public void addRequiredAction(String action) {
+        // Ignore required actions for external users to allow direct grant login.
+    }
+
+    @Override
+    public void removeRequiredAction(String action) {
+        // Ignore required actions for external users to allow direct grant login.
     }
 
     @Override

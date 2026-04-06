@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.controller.dto.GoogleCodeExchangeRequest;
 import com.example.demo.controller.dto.TokenRequest;
 import com.example.demo.controller.dto.TokenResponse;
+import com.example.demo.controller.dto.RegisterRequest;
 import com.example.demo.service.RemoteFederationAuthService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -36,6 +37,11 @@ public class AuthController {
     @PostMapping("/token/remote-federation")
     public TokenResponse tokenRemoteFederation(@RequestBody TokenRequest request) {
         return remoteFederationAuthService.login(request);
+    }
+
+    @PostMapping("/register/remote-federation")
+    public TokenResponse registerRemoteFederation(@RequestBody RegisterRequest request) {
+        return remoteFederationAuthService.register(request);
     }
 
     @PostMapping("/token/google")

@@ -14,6 +14,18 @@
     background: linear-gradient(160deg, #f6f8fb 0%, #ecf1f7 100%);
 }
 
+.auth-page.authenticated {
+    align-items: stretch;
+    justify-content: stretch;
+    padding: 16px;
+}
+
+.auth-page.authenticated app-home,
+.auth-page.authenticated app-export {
+    display: block;
+    width: 100%;
+}
+
 .auth-card {
     width: 100%;
     max-width: 460px;
@@ -185,120 +197,6 @@ input:focus {
     font-size: 14px;
     cursor: pointer;
     padding: 0 0 0 6px;
-}
-
-.crud-card {
-    width: 100%;
-    max-width: 100%;
-    background: #ffffff;
-    border: solid #d9e0e7;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 8px 20px rgba(38, 57, 77, 0.08);
-}
-
-.crud-card h2 {
-    margin-top: 0;
-}
-
-.role-line {
-    margin: 6px 0 14px;
-    font-size: 14px;
-    color: #2e4358;
-}
-
-.home-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-}
-
-.logout-btn {
-    height: 38px;
-    border: 1px solid #d3a4a4;
-    border-radius: 8px;
-    background: #fff5f5;
-    color: #8d1a1a;
-    padding: 0 12px;
-    cursor: pointer;
-}
-
-.me-block {
-    background: #f7fafc;
-    border: 1px solid #d7e2ee;
-    border-radius: 10px;
-    padding: 12px;
-    margin: 10px 0 16px;
-}
-
-.me-block pre {
-    margin: 0;
-    max-height: 400px;
-    overflow: auto;
-    font-size: 12px;
-}
-
-.crud-form,
-.crud-list {
-    background: #fbfdff;
-    border: 1px solid #dce6f1;
-    border-radius: 10px;
-    padding: 14px;
-    margin-top: 12px;
-}
-
-.actions-inline {
-    display: flex;
-    gap: 8px;
-    margin-top: 8px;
-}
-
-.cancel-btn {
-    margin-top: 8px;
-    height: 44px;
-    border: 1px solid #b9c7d6;
-    border-radius: 8px;
-    background: #f5f8fb;
-    color: #2e4358;
-    font-size: 15px;
-    cursor: pointer;
-    padding: 0 14px;
-}
-
-.user-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border: 1px solid #dbe5f0;
-    border-radius: 8px;
-    padding: 10px 12px;
-    background: #ffffff;
-    margin-bottom: 8px;
-}
-
-.muted {
-    font-size: 13px;
-    color: #60788f;
-}
-
-.actions {
-    display: flex;
-    gap: 6px;
-}
-
-.actions button {
-    border: 1px solid #b8c9da;
-    background: #f8fbff;
-    border-radius: 6px;
-    padding: 6px 10px;
-    cursor: pointer;
-}
-
-.danger-btn {
-    color: #8d1a1a;
-    border-color: #e0b5b5 !important;
-    background: #fff5f5 !important;
 }
 
 @media (max-width: 480px) {

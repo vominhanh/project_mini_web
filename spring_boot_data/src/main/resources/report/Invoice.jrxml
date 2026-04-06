@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.19.0.final using JasperReports Library version 6.19.0-646c68931cebf1a58bc65c4359d1f0ca223c5e94  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Invoice" pageWidth="595" pageHeight="842" columnWidth="535" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="4eedbb89-b4f6-4469-9ab6-f642a1688cf7">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="PostGres"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<style name="Title" forecolor="#FFFFFF" fontName="Times New Roman" fontSize="50" isBold="false" pdfFontName="Times-Bold"/>
+	<style name="SubTitle" forecolor="#CCCCCC" fontName="Times New Roman" fontSize="18" isBold="false" pdfFontName="Times-Roman"/>
+	<style name="Column header" forecolor="#666666" fontName="Times New Roman" fontSize="14" isBold="true"/>
+	<style name="Detail" mode="Transparent" fontName="Times New Roman"/>
+	<style name="Row" mode="Transparent" fontName="Times New Roman" pdfFontName="Times-Roman">
+		<conditionalStyle>
+			<conditionExpression><![CDATA[$V{REPORT_COUNT}%2 == 0]]></conditionExpression>
+			<style mode="Opaque" backcolor="#EEEFF0"/>
+		</conditionalStyle>
+	</style>
+	<style name="Table">
+		<box>
+			<pen lineWidth="1.0" lineColor="#000000"/>
+			<topPen lineWidth="1.0" lineColor="#000000"/>
+			<leftPen lineWidth="1.0" lineColor="#000000"/>
+			<bottomPen lineWidth="1.0" lineColor="#000000"/>
+			<rightPen lineWidth="1.0" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_TH" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_CH" mode="Opaque" backcolor="#CACED0">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+		<conditionalStyle>
+			<conditionExpression><![CDATA[$V{REPORT_COUNT}%2 == 0]]></conditionExpression>
+			<style backcolor="#D8D8D8"/>
+		</conditionalStyle>
+	</style>
+	<style name="Table 1_TH" mode="Opaque" backcolor="#F0F8FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table 1_CH" mode="Opaque" backcolor="#BFE1FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table 1_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<subDataset name="tableDataset" uuid="f13e6d36-5148-4ecc-bbe3-3035def80980">
+		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="Sample DB"/>
+		<property name="com.jaspersoft.studio.data.sql.tables">
+			<![CDATA[ZmFjZXBheV9hdXRoX2xvZyAsMTUsMTUsMmFiZWRmYjQtZjhiZi00NGJlLTlhMjYtMWM4MjZjYTYz
+MDNiOw==]]>
+		</property>
+		<queryString>
+			<![CDATA[SELECT transaction_id,
+	transaction_description,
+	performer_user_id,
+	performer_name,
+	auth_time,
+	status,
+	error_info
+FROM facepay_auth_log
+ORDER BY facepay_auth_log.auth_time DESC]]>
+		</queryString>
+		<field name="transaction_id" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="transaction_id"/>
+			<property name="com.jaspersoft.studio.field.label" value="transaction_id"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="facepay_auth_log"/>
+		</field>
+		<field name="transaction_description" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="transaction_description"/>
+			<property name="com.jaspersoft.studio.field.label" value="transaction_description"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="facepay_auth_log"/>
+		</field>
+		<field name="performer_user_id" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="performer_user_id"/>
+			<property name="com.jaspersoft.studio.field.label" value="performer_user_id"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="facepay_auth_log"/>
+		</field>
+		<field name="performer_name" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="performer_name"/>
+			<property name="com.jaspersoft.studio.field.label" value="performer_name"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="facepay_auth_log"/>
+		</field>
+		<field name="auth_time" class="java.sql.Timestamp">
+			<property name="com.jaspersoft.studio.field.name" value="auth_time"/>
+			<property name="com.jaspersoft.studio.field.label" value="auth_time"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="facepay_auth_log"/>
+		</field>
+		<field name="status" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="status"/>
+			<property name="com.jaspersoft.studio.field.label" value="status"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="facepay_auth_log"/>
+		</field>
+		<field name="error_info" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="error_info"/>
+			<property name="com.jaspersoft.studio.field.label" value="error_info"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="facepay_auth_log"/>
+		</field>
+	</subDataset>
+	<queryString>
+		<![CDATA[select transaction_id,
+       transaction_description,
+       performer_user_id,
+       performer_name,
+       auth_time,
+       status,
+       error_info
+from facepay_auth_log]]>
+	</queryString>
+	<field name="transaction_id" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="transaction_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="transaction_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facepay_auth_log"/>
+	</field>
+	<field name="transaction_description" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="transaction_description"/>
+		<property name="com.jaspersoft.studio.field.label" value="transaction_description"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facepay_auth_log"/>
+	</field>
+	<field name="performer_user_id" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="performer_user_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="performer_user_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facepay_auth_log"/>
+	</field>
+	<field name="performer_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="performer_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="performer_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facepay_auth_log"/>
+	</field>
+	<field name="auth_time" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="auth_time"/>
+		<property name="com.jaspersoft.studio.field.label" value="auth_time"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facepay_auth_log"/>
+	</field>
+	<field name="status" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="status"/>
+		<property name="com.jaspersoft.studio.field.label" value="status"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facepay_auth_log"/>
+	</field>
+	<field name="error_info" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="error_info"/>
+		<property name="com.jaspersoft.studio.field.label" value="error_info"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="facepay_auth_log"/>
+	</field>
+	<title>
+		<band height="83" splitType="Stretch">
+			<line>
+				<reportElement x="0" y="80" width="556" height="1" uuid="806ce5df-1219-4876-ae0c-ca7405b1f246">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<image hAlign="Center" vAlign="Middle">
+				<reportElement x="0" y="10" width="160" height="49" uuid="94883631-a913-43e2-b182-ab8d77d0181e"/>
+				<imageExpression><![CDATA["C:/Users/avmin/JaspersoftWorkspace/MyReports/Eximbank logo-01 (4) (2) (1).png"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="300" y="0" width="257" height="25" uuid="e622555d-198b-4ccd-a4a1-c59c53304058">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font fontName="Times New Roman" size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NHẬT KÝ XÁC THỰC FACEPAY]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="352" y="25" width="205" height="15" uuid="c226e44d-3bb5-4145-b0b3-903bf1d79fde"/>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Facepay Management]]></text>
+			</staticText>
+		</band>
+	</title>
+	<summary>
+		<band height="75">
+			<componentElement>
+				<reportElement x="3" y="10" width="552" height="60" isPrintInFirstWholeBand="true" uuid="2eb5f4b5-9bb1-4664-83e1-3b3f3b2fbc9b">
+					<property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.VerticalRowLayout"/>
+					<property name="com.jaspersoft.studio.table.style.table_header" value="Table 1_TH"/>
+					<property name="com.jaspersoft.studio.table.style.column_header" value="Table 1_CH"/>
+					<property name="com.jaspersoft.studio.table.style.detail" value="Table 1_TD"/>
+				</reportElement>
+				<jr:table xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
+					<datasetRun subDataset="tableDataset" uuid="366aa76a-e21f-4c66-8e10-73de3a0757d6">
+						<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					</datasetRun>
+					<jr:column width="40" uuid="8760652f-b316-4d47-8770-6e93cc40d478">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column1"/>
+						<jr:columnHeader style="Table 1_CH" height="30" rowSpan="1">
+							<staticText>
+								<reportElement x="0" y="0" width="40" height="30" uuid="1e294c82-3636-4ecd-a6d2-5312f6771931"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle">
+									<font size="8" isBold="true"/>
+								</textElement>
+								<text><![CDATA[STT]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table 1_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="40" height="30" uuid="4af2b4a3-b3d8-4d3c-9d51-84f1dca1f001"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle"/>
+								<textFieldExpression><![CDATA[$V{REPORT_COUNT}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="90" uuid="768a391c-9f09-4820-8861-02613448bf16">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column2"/>
+						<jr:columnHeader style="Table 1_CH" height="30" rowSpan="1">
+							<staticText>
+								<reportElement x="0" y="0" width="90" height="30" uuid="1c51fbc1-8c13-48ea-9154-02c8742abe6d"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle">
+									<font size="8" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Thông tin giao dịch]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table 1_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="90" height="30" uuid="7c6a5d6d-6c77-4a6f-9f46-2a70f0d7d101"/>
+								<textElement textAlignment="Left" verticalAlignment="Middle"/>
+								<textFieldExpression><![CDATA[$F{transaction_description}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="80" uuid="fc4c3d7c-fff5-452d-8f82-71db5178a1b3">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column3"/>
+						<jr:columnHeader style="Table 1_CH" height="30" rowSpan="1">
+							<staticText>
+								<reportElement x="0" y="0" width="80" height="30" uuid="57088c72-857e-4a8a-bd76-2596ffd846c3"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle">
+									<font size="8" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Người thực hiện]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table 1_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="80" height="30" uuid="e0f0eddb-4d5e-4f62-9b74-35f53a34d102"/>
+								<textElement textAlignment="Left" verticalAlignment="Middle"/>
+								<textFieldExpression><![CDATA[$F{performer_name}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="100" uuid="00e9bad4-1553-4994-93f5-d95d73c0a542">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column4"/>
+						<jr:columnHeader style="Table 1_CH" height="30" rowSpan="1">
+							<staticText>
+								<reportElement x="0" y="0" width="100" height="30" uuid="2c4a27d0-1667-4e6d-b0aa-c8c26ed18f50"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle">
+									<font size="8" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Thời gian xác thực]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table 1_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="100" height="30" uuid="3d8a5dba-0f87-4ae3-a16f-02d2d0b9d103"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle"/>
+								<textFieldExpression><![CDATA[$F{auth_time}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="50" uuid="799b74ba-ede2-4967-befd-c63f4e637e18">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column5"/>
+						<jr:columnHeader style="Table 1_CH" height="30" rowSpan="1">
+							<staticText>
+								<reportElement x="0" y="0" width="50" height="30" uuid="3db1b87b-dc03-43dc-8ba8-ae51e47d0bf6"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle">
+									<font size="8" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Trạng thái]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table 1_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="50" height="30" uuid="ec13c7f2-ae57-4fc9-98c9-02d8cfe9d104"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle"/>
+								<textFieldExpression><![CDATA[$F{status}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="192" uuid="153f3d93-a00d-4001-a189-bd09f591cdf8">
+						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column6"/>
+						<jr:columnHeader style="Table 1_CH" height="30" rowSpan="1">
+							<staticText>
+								<reportElement x="0" y="0" width="192" height="30" uuid="04233547-1b69-45ed-a952-925cf98d7435"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle">
+									<font size="8" isBold="true"/>
+								</textElement>
+								<text><![CDATA[Thông tin lỗi]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table 1_TD" height="30">
+							<textField>
+								<reportElement x="0" y="0" width="192" height="30" uuid="6c43a486-3d95-439b-8164-399eb29d0c1b"/>
+								<textFieldExpression><![CDATA[$F{error_info}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+				</jr:table>
+			</componentElement>
+		</band>
+	</summary>
+</jasperReport>

@@ -1,0 +1,32 @@
+<section class="export-card" aria-label="Export du lieu">
+    <header class="export-header">
+        <div>
+            <h2>Trang xuat du lieu</h2>
+            <p class="subtitle">Xuat thong tin user va danh sach users ra file JSON.</p>
+        </div>
+        <div class="actions">
+            <button type="button" class="ghost-btn" (click)="goBack()">Quay lai Home</button>
+
+
+        </div>
+    </header>
+
+    <div class="grid">
+        <article class="panel">
+            <h3>Thong tin hien tai</h3>
+            <p>Role: <strong>{{ authView.effectiveRole }}</strong></p>
+            <p>Email: <strong>{{ userInfo?.currentUser?.email || userInfo?.currentUser?.username || '-' }}</strong></p>
+            <p>Name: <strong>{{ userInfo?.currentUser?.name || '-' }}</strong></p>
+            <p>So user trong danh sach: <strong>{{ users.length }}</strong></p>
+        </article>
+
+        <article class="panel">
+            <h3>Xem truoc du lieu users</h3>
+            @if (users.length === 0) {
+            <p>Chua co du lieu users de xuat.</p>
+            } @else {
+            <pre>{{ users | json }}</pre>
+            }
+        </article>
+    </div>
+</section>

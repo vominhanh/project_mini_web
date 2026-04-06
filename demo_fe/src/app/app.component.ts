@@ -3,10 +3,12 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, inject, PLATFORM_ID } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { isPlatformBrowser } from '@angular/common';
+import { HomeComponent } from './home/home.component';
+import { ExportComponent } from './export/export.component';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, HomeComponent, ExportComponent],
   standalone: true,
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
@@ -89,7 +91,33 @@ export class AppComponent {
     const path = window.location.pathname;
     if (!this.isAuthenticated() && path !== '/') {
       this.navigateTo('/', true);
+      return;
     }
+
+    if (this.isAuthenticated() && path !== '/' && path !== '/home' && path !== '/export') {
+      this.navigateTo('/home', true);
+    }
+  }
+
+  isExportPage(): boolean {
+    if (!isPlatformBrowser(this.platformId)) {
+      return false;
+    }
+    return window.location.pathname === '/export';
+  }
+
+  goToExport(): void {
+    if (!this.isAuthenticated()) {
+      return;
+    }
+    this.navigateTo('/export');
+  }
+
+  goToHome(): void {
+    if (!this.isAuthenticated()) {
+      return;
+    }
+    this.navigateTo('/home');
   }
 
   private navigateTo(path: string, replace = false): void {

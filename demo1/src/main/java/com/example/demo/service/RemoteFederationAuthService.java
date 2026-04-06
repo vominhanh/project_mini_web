@@ -9,6 +9,8 @@ import java.util.Map;
 public interface RemoteFederationAuthService {
     TokenResponse login(TokenRequest request);
 
+    TokenResponse register(com.example.demo.controller.dto.RegisterRequest request);
+
     TokenResponse exchangeGoogleCode(String code, String redirectUri);
 
     String getGoogleAuthUrl(String redirectUri);

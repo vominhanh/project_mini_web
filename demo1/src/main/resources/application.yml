@@ -27,6 +27,16 @@ app:
       client-id: demo-fe
       client-secret: ${KEYCLOAK_REMOTE_CLIENT_SECRET:}
       token-uri: ${KEYCLOAK_REMOTE_TOKEN_URI:http://127.0.0.1:8080/realms/master/protocol/openid-connect/token}
+    admin:
+      client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:}
+      client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET:}
+      token-realm: ${KEYCLOAK_ADMIN_TOKEN_REALM:}
+
+  user-storage:
+    jdbc:
+      url: ${USER_STORAGE_JDBC_URL:jdbc:postgresql://localhost:5432/miniWeb}
+      username: ${USER_STORAGE_JDBC_USER:postgres}
+      password: ${USER_STORAGE_JDBC_PASSWORD:123321}
 
 server:
   port: ${SERVER_PORT:8082}

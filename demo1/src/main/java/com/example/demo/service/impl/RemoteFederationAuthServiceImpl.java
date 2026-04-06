@@ -1,5 +1,6 @@
 package com.example.demo.service.impl;
 
+import at.favre.lib.crypto.bcrypt.BCrypt;
 import com.example.demo.controller.dto.TokenRequest;
 import com.example.demo.controller.dto.TokenResponse;
 import com.example.demo.service.RemoteFederationAuthService;
@@ -13,10 +14,18 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +62,24 @@ public class RemoteFederationAuthServiceImpl implements RemoteFederationAuthServ
     @Value("${keycloak.realm:master}")
     private String keycloakRealm;
 
+    @Value("${app.keycloak.admin.client-id:}")
+    private String keycloakAdminClientId;
+
+    @Value("${app.keycloak.admin.client-secret:}")
+    private String keycloakAdminClientSecret;
+
+    @Value("${app.keycloak.admin.token-realm:}")
+    private String keycloakAdminTokenRealm;
+
+    @Value("${app.user-storage.jdbc.url:}")
+    private String userStorageJdbcUrl;
+
+    @Value("${app.user-storage.jdbc.username:postgres}")
+    private String userStorageJdbcUsername;
+
+    @Value("${app.user-storage.jdbc.password:}")
+    private String userStorageJdbcPassword;
+
     private final KeycloakPasswordGrantClient keycloakClient = new KeycloakPasswordGrantClient();
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -70,6 +97,220 @@ public class RemoteFederationAuthServiceImpl implements RemoteFederationAuthServ
                 "remote-federation",
                 "Kiem tra client_id/client_secret (client_not_found, client disabled hoac direct access grants tat); neu client hop le moi kiem tra username/password"
         );
+    }
+
+    @Override
+    public TokenResponse register(com.example.demo.controller.dto.RegisterRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Register request khong hop le");
+        }
+
+        String email = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : "";
+        String password = request.getPassword() != null ? request.getPassword() : "";
+        String confirmPassword = request.getConfirmPassword() != null ? request.getConfirmPassword() : "";
+        String firstName = request.getFirstName() != null ? request.getFirstName().trim() : "";
+        String lastName = request.getLastName() != null ? request.getLastName().trim() : "";
+
+        if (email.isBlank()) {
+            throw new IllegalArgumentException("Email khong duoc trong");
+        }
+
+        if (password.isBlank()) {
+            throw new IllegalArgumentException("Mat khau khong duoc trong");
+        }
+
+        if (!password.equals(confirmPassword)) {
+            throw new IllegalArgumentException("Mat khau khong trung khop");
+        }
+
+        if (email.length() > 50) {
+            throw new IllegalArgumentException("Email qua dai (toi da 50 ky tu theo cot username trong DB)");
+        }
+
+        try {
+            ensureUserRegistered(email, password, firstName, lastName);
+
+            TokenRequest loginRequest = new TokenRequest(email, password);
+            return login(loginRequest);
+
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("Loi dang ky: " + e.getMessage(), e);
+        }
+    }
+
+
+    private void ensureUserRegistered(String email, String password, String firstName, String lastName) {
+        boolean hasAdmin = keycloakAdminClientId != null && !keycloakAdminClientId.isBlank()
+                && keycloakAdminClientSecret != null && !keycloakAdminClientSecret.isBlank();
+        if (hasAdmin) {
+            createUserViaKeycloakAdminApi(email, password, firstName, lastName);
+            return;
+        }
+        if (userStorageJdbcUrl != null && !userStorageJdbcUrl.isBlank()) {
+            createUserViaSharedUserDatabase(email, password, firstName, lastName);
+            return;
+        }
+        throw new IllegalStateException(
+                "Chua cau hinh dang ky: dat KEYCLOAK_ADMIN_CLIENT_ID + KEYCLOAK_ADMIN_CLIENT_SECRET, "
+                        + "hoac app.user-storage.jdbc.url (Postgres trung Keycloak User Storage).");
+    }
+
+    private void createUserViaSharedUserDatabase(String email, String password, String firstName, String lastName) {
+        String fn = (firstName != null && !firstName.isBlank()) ? firstName.trim() : "User";
+        String ln = (lastName != null && !lastName.isBlank()) ? lastName.trim() : "Keycloak";
+        if (fn.length() > 50) {
+            fn = fn.substring(0, 50);
+        }
+        if (ln.length() > 50) {
+            ln = ln.substring(0, 50);
+        }
+        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
+        String hash = BCrypt.withDefaults().hashToString(12, password.toCharArray());
+        String insert = "INSERT INTO users (username, email, firstname, lastname, password) VALUES (?, ?, ?, ?, ?)";
+
+        try (Connection c = DriverManager.getConnection(
+                userStorageJdbcUrl.trim(),
+                userStorageJdbcUsername != null ? userStorageJdbcUsername.trim() : "postgres",
+                userStorageJdbcPassword != null ? userStorageJdbcPassword : "")) {
+            if (userExistsInSharedDb(c, normalizedEmail)) {
+                throw new IllegalArgumentException("Email da duoc su dung");
+            }
+            try (PreparedStatement ps = c.prepareStatement(insert)) {
+                ps.setString(1, normalizedEmail);
+                ps.setString(2, normalizedEmail);
+                ps.setString(3, fn);
+                ps.setString(4, ln);
+                ps.setString(5, hash);
+                ps.executeUpdate();
+            }
+        } catch (SQLException e) {
+            if ("23505".equals(e.getSQLState())) {
+                throw new IllegalArgumentException("Email da duoc su dung", e);
+            }
+            throw new IllegalStateException("Khong ghi duoc user vao Postgres user-storage: " + e.getMessage(), e);
+        }
+    }
+
+    private boolean userExistsInSharedDb(Connection c, String normalizedEmail) throws SQLException {
+        String q = "SELECT 1 FROM users WHERE lower(username) = ? OR lower(email) = ? LIMIT 1";
+        try (PreparedStatement ps = c.prepareStatement(q)) {
+            ps.setString(1, normalizedEmail);
+            ps.setString(2, normalizedEmail);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+
+    private void createUserViaKeycloakAdminApi(String email, String password, String firstName, String lastName) {
+        String realm = keycloakRealm == null || keycloakRealm.isBlank() ? "master" : keycloakRealm.trim();
+        String baseUrl = keycloakAuthServerUrl == null ? "" : keycloakAuthServerUrl.trim();
+        String adminToken = obtainKeycloakAdminAccessToken();
+        String adminUsersUri = baseUrl + "/admin/realms/" + realm + "/users";
+
+        if (userExistsInKeycloak(adminUsersUri, adminToken, email)) {
+            throw new IllegalArgumentException("Email da duoc su dung");
+        }
+
+        String fn = (firstName != null && !firstName.isBlank()) ? firstName.trim() : "User";
+        String ln = (lastName != null && !lastName.isBlank()) ? lastName.trim() : "Keycloak";
+
+        Map<String, Object> representation = new java.util.LinkedHashMap<>();
+        representation.put("username", email);
+        representation.put("email", email);
+        representation.put("firstName", fn);
+        representation.put("lastName", ln);
+        representation.put("enabled", true);
+        representation.put("emailVerified", true);
+        representation.put("credentials", List.of(
+                Map.of("type", "password", "value", password, "temporary", false)
+        ));
+
+        HttpHeaders postHeaders = new HttpHeaders();
+        postHeaders.setBearerAuth(adminToken);
+        postHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+        try {
+            restTemplate.postForEntity(
+                    URI.create(adminUsersUri),
+                    new HttpEntity<>(representation, postHeaders),
+                    Void.class
+            );
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode().value() == 409) {
+                throw new IllegalArgumentException("Email da duoc su dung", e);
+            }
+            String body = e.getResponseBodyAsString(StandardCharsets.UTF_8);
+            throw new IllegalStateException(
+                    "Keycloak admin tao user that bai: " + e.getStatusCode() + " " + body,
+                    e);
+        }
+    }
+
+    private String obtainKeycloakAdminAccessToken() {
+        String tokenRealm = (keycloakAdminTokenRealm != null && !keycloakAdminTokenRealm.isBlank())
+                ? keycloakAdminTokenRealm.trim()
+                : (keycloakRealm == null || keycloakRealm.isBlank() ? "master" : keycloakRealm.trim());
+        String baseUrl = keycloakAuthServerUrl == null ? "" : keycloakAuthServerUrl.trim();
+        String tokenUri = baseUrl + "/realms/" + tokenRealm + "/protocol/openid-connect/token";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("grant_type", "client_credentials");
+        form.add("client_id", keycloakAdminClientId.trim());
+        form.add("client_secret", keycloakAdminClientSecret.trim());
+
+        try {
+            @SuppressWarnings("unchecked")
+            ResponseEntity<Map<String, Object>> response =
+                    (ResponseEntity<Map<String, Object>>) (ResponseEntity<?>) restTemplate.postForEntity(
+                            URI.create(tokenUri),
+                            new HttpEntity<>(form, headers),
+                            Map.class
+                    );
+            Map<String, Object> body = response.getBody();
+            if (body == null || body.get("access_token") == null) {
+                throw new IllegalStateException("Keycloak admin: khong lay duoc access_token (client_credentials)");
+            }
+            return body.get("access_token").toString();
+        } catch (HttpClientErrorException e) {
+            String msg = e.getResponseBodyAsString(StandardCharsets.UTF_8);
+            throw new IllegalStateException(
+                    "Keycloak admin: lay token that bai " + e.getStatusCode() + " " + msg,
+                    e);
+        }
+    }
+
+    private boolean userExistsInKeycloak(String adminUsersUri, String adminAccessToken, String username) {
+        String url = UriComponentsBuilder.fromUriString(adminUsersUri)
+                .queryParam("username", username)
+                .queryParam("exact", true)
+                .build()
+                .toUriString();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(adminAccessToken);
+        try {
+            @SuppressWarnings("unchecked")
+            ResponseEntity<List<Map<String, Object>>> response =
+                    (ResponseEntity<List<Map<String, Object>>>) (ResponseEntity<?>) restTemplate.exchange(
+                            URI.create(url),
+                            HttpMethod.GET,
+                            new HttpEntity<>(headers),
+                            List.class
+                    );
+            List<Map<String, Object>> body = response.getBody();
+            return body != null && !body.isEmpty();
+        } catch (HttpClientErrorException e) {
+            throw new IllegalStateException(
+                    "Keycloak admin: kiem tra user that bai " + e.getStatusCode() + " "
+                            + e.getResponseBodyAsString(StandardCharsets.UTF_8),
+                    e);
+        }
     }
 
     @Override

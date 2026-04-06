@@ -167,7 +167,10 @@ public class CustomUserStorageProvider implements UserStorageProvider, UserRegis
 
         String firstName = "User";
         String lastName = "Keycloak";
-        String email = normalizedUsername + "@pending.local";
+        // Neu dang ky qua Admin API voi username = email, luu dung email; Keycloak se cap nhat ten sau.
+        String email = normalizedUsername.contains("@")
+                ? normalizedUsername
+                : normalizedUsername + "@pending.local";
         String randomPassword = hashPassword(UUID.randomUUID().toString());
 
         String query = "INSERT INTO users (username, email, firstname, lastname, password) VALUES (?, ?, ?, ?, ?)";
