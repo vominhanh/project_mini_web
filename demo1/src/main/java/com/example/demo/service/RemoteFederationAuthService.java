@@ -20,6 +20,8 @@ public interface RemoteFederationAuthService {
 
     List<Map<String, Object>> getAllUsers(String accessToken);
 
+    List<Map<String, Object>> getReportUsers(String accessToken);
+
     Map<String, Object> getInfo(String accessToken);
 
     String getResetPasswordUrl(String redirectUri);

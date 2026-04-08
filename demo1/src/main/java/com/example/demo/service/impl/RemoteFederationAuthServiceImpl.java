@@ -29,6 +29,7 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
 
 @Service
 public class RemoteFederationAuthServiceImpl implements RemoteFederationAuthService {
@@ -251,6 +252,12 @@ public class RemoteFederationAuthServiceImpl implements RemoteFederationAuthServ
     }
 
     private String obtainKeycloakAdminAccessToken() {
+        if (keycloakAdminClientId == null || keycloakAdminClientId.isBlank()
+            || keycloakAdminClientSecret == null || keycloakAdminClientSecret.isBlank()) {
+            throw new IllegalStateException(
+                "Chua cau hinh KEYCLOAK_ADMIN_CLIENT_ID hoac KEYCLOAK_ADMIN_CLIENT_SECRET cho report/admin API."
+            );
+        }
         String tokenRealm = (keycloakAdminTokenRealm != null && !keycloakAdminTokenRealm.isBlank())
                 ? keycloakAdminTokenRealm.trim()
                 : (keycloakRealm == null || keycloakRealm.isBlank() ? "master" : keycloakRealm.trim());
@@ -283,6 +290,30 @@ public class RemoteFederationAuthServiceImpl implements RemoteFederationAuthServ
             throw new IllegalStateException(
                     "Keycloak admin: lay token that bai " + e.getStatusCode() + " " + msg,
                     e);
+        }
+    }
+
+    private List<Map<String, Object>> fetchAdminUsers(String bearerToken) {
+        String adminUsersUri = (keycloakAuthServerUrl == null ? "" : keycloakAuthServerUrl.trim())
+                + "/admin/realms/"
+                + (keycloakRealm == null || keycloakRealm.isBlank() ? "master" : keycloakRealm.trim())
+                + "/users";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(bearerToken);
+        try {
+            @SuppressWarnings("unchecked")
+            ResponseEntity<List<Map<String, Object>>> response =
+                    (ResponseEntity<List<Map<String, Object>>>) (ResponseEntity<?>) restTemplate.exchange(
+                            URI.create(adminUsersUri),
+                            HttpMethod.GET,
+                            new HttpEntity<>(headers),
+                            List.class
+                    );
+            List<Map<String, Object>> body = response.getBody();
+            return body == null ? List.of() : body;
+        } catch (RestClientException ex) {
+            return List.of();
         }
     }
 
@@ -462,14 +493,36 @@ public class RemoteFederationAuthServiceImpl implements RemoteFederationAuthServ
             if (body == null) {
                 return List.of();
             }
-            return body.stream().map(this::toSimpleUser).toList();
+            return body.stream().map(user -> toSimpleUser(user, accessToken)).toList();
         } catch (RestClientException ex) {
             Map<String, Object> currentUser = TokenRoleResolver.extractCurrentUser(accessToken);
             if (currentUser.isEmpty()) {
                 return List.of();
             }
-            return List.of(currentUser);
+            return List.of(toSimpleUser(currentUser, accessToken));
         }
+    }
+
+    @Override
+    public List<Map<String, Object>> getReportUsers(String accessToken) {
+        if (accessToken != null && !accessToken.isBlank()) {
+            List<Map<String, Object>> users = fetchAdminUsers(accessToken);
+            if (!users.isEmpty()) {
+                return users.stream().map(user -> toSimpleUser(user, accessToken)).toList();
+            }
+        }`,m. ,, , mnbbbbbbbbbvvvvvvvvvvvvvv-
+        if (keycloakAdminClientId != null && !keycloakAdminClientId.isBlank()
+                && keycloakAdminClientSecret != null && !keycloakAdminClientSecret.isBlank()) {
+            String adminToken = obtainKeycloakAdminAccessToken();
+            List<Map<String, Object>> users = fetchAdminUsers(adminToken);
+            if (!users.isEmpty()) {
+                return users.stream().map(user -> toSimpleUser(user, adminToken)).toList();
+            }
+        }
+
+        throw new IllegalStateException(
+                "Khong lay duoc danh sach user cho report. Can token co quyen admin Keycloak hoac cau hinh KEYCLOAK_ADMIN_CLIENT_ID/KEYCLOAK_ADMIN_CLIENT_SECRET."
+        );
     }
 
     @Override
@@ -585,17 +638,74 @@ public class RemoteFederationAuthServiceImpl implements RemoteFederationAuthServ
         );
     }
 
-    private Map<String, Object> toSimpleUser(Map<String, Object> user) {
-        return Map.of(
-                "id", stringOf(user.get("id")),
-                "email", stringOf(user.get("email")),
-                "username", stringOf(user.get("username")),
-                "name", (stringOf(user.get("firstName")) + " " + stringOf(user.get("lastName"))).trim(),
-                "enabled", user.get("enabled") == null ? "" : user.get("enabled").toString()
-        );
+    private Map<String, Object> toSimpleUser(Map<String, Object> user, String accessToken) {
+        Map<String, Object> simple = new LinkedHashMap<>();
+        simple.put("id", stringOf(user.get("id")));
+        simple.put("email", stringOf(user.get("email")));
+        simple.put("username", stringOf(user.get("username")));
+        simple.put("name", (stringOf(user.get("firstName")) + " " + stringOf(user.get("lastName"))).trim());
+        simple.put("role", resolveUserRole(user, accessToken));
+        simple.put("enabled", user.get("enabled") == null ? "" : user.get("enabled").toString());
+        return simple;
+    }
+
+    private String resolveUserRole(Map<String, Object> user, String accessToken) {
+        String roleFromPayload = firstNonBlank(
+                stringOf(user.get("role")),
+                stringOf(user.get("roles")),
+                stringOf(user.get("realmRoles")));
+        if (!roleFromPayload.isBlank()) {
+            return roleFromPayload;
+        }
+
+        String userId = stringOf(user.get("id"));
+        if (userId.isBlank() || accessToken == null || accessToken.isBlank()) {
+            return "";
+        }
+
+        String roleMappingsUri = (keycloakAuthServerUrl == null ? "" : keycloakAuthServerUrl.trim())
+                + "/admin/realms/"
+                + (keycloakRealm == null || keycloakRealm.isBlank() ? "master" : keycloakRealm.trim())
+                + "/users/"
+                + userId
+                + "/role-mappings/realm/composite";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        try {
+            @SuppressWarnings("unchecked")
+            ResponseEntity<List<Map<String, Object>>> response =
+                    (ResponseEntity<List<Map<String, Object>>>) (ResponseEntity<?>) restTemplate.exchange(
+                            URI.create(roleMappingsUri),
+                            HttpMethod.GET,
+                            new HttpEntity<>(headers),
+                            List.class
+                    );
+            List<Map<String, Object>> roles = response.getBody();
+            if (roles == null || roles.isEmpty()) {
+                return "";
+            }
+            return roles.stream()
+                    .map(role -> stringOf(role.get("name")))
+                    .filter(role -> !role.isBlank())
+                    .distinct()
+                    .reduce((left, right) -> left + ", " + right)
+                    .orElse("");
+        } catch (RestClientException ex) {
+            return "";
+        }
     }
 
     private String stringOf(Object value) {
         return value == null ? "" : value.toString();
+    }
+
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.trim().isBlank()) {
+                return value.trim();
+            }
+        }
+        return "";
     }
 }

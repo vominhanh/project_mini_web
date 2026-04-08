@@ -1,5 +1,7 @@
 package com.example.demo.service;
 
+import com.example.demo.controller.dto.ReportTemplateSnapshot;
+import com.example.demo.controller.dto.RuntimeTemplate;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import net.sf.jasperreports.engine.JRException;
@@ -22,7 +24,6 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -43,7 +44,7 @@ public class InvoiceReportTemplateConfigService {
     private static final String DEFAULT_LOGO_ALIAS = "Eximbank_Logo.png";
     private static final String DEFAULT_TEMPLATE_CLASSPATH = "report/Invoice.jrxml";
     private static final String DEFAULT_LOGO_CLASSPATH = "report/Eximbank_Logo.png";
-    private static final Set<String> ALLOWED_EXPORT_COLUMNS = Set.of("id", "firstname", "lastname", "email", "username");
+    private static final Set<String> ALLOWED_EXPORT_COLUMNS = Set.of("id", "firstname", "lastname", "email", "username", "role");
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -115,6 +116,7 @@ public class InvoiceReportTemplateConfigService {
     public RuntimeTemplate compileCurrentTemplate(List<String> selectedColumns) throws JRException, IOException {
         ReportTemplateSnapshot current = getCurrentTemplate();
         byte[] effectiveJrxml = filterJrxmlColumns(current.jrxmlContent(), selectedColumns);
+        effectiveJrxml = normalizeForBeanDataSource(effectiveJrxml);
         JasperReport compiled;
         try (InputStream in = stripPdfFonts(new ByteArrayInputStream(effectiveJrxml))) {
             compiled = JasperCompileManager.compileReport(in);
@@ -200,6 +202,170 @@ public class InvoiceReportTemplateConfigService {
         }
     }
 
+    private static byte[] normalizeForBeanDataSource(byte[] jrxmlContent) throws IOException {
+        try {
+            String xml = new String(jrxmlContent, StandardCharsets.UTF_8);
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            dbf.setNamespaceAware(true);
+            Document doc = dbf.newDocumentBuilder().parse(new InputSource(new StringReader(xml)));
+
+            Element root = doc.getDocumentElement();
+
+            removeReportDataSourceParametersEverywhere(root);
+            ensureRootTableDataSourceParameter(root);
+
+            removeQueryStringsEverywhere(root);
+            
+            replaceConnectionExpressionsWithDataSource(root);
+            normalizeDatasetRunDataSourceExpressions(root);
+
+            Transformer tf = TransformerFactory.newInstance().newTransformer();
+            tf.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+            tf.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            tf.transform(new DOMSource(doc), new StreamResult(out));
+            return out.toByteArray();
+        } catch (Exception e) {
+            throw new IOException("Khong the chuyen report sang che do data source tu BE.", e);
+        }
+    }
+
+    private static void removeReportDataSourceParametersEverywhere(Element root) {
+        // Xoa o root scope (neu template upload co khai bao)
+        List<Element> rootParams = childElementsByLocalName(root, "parameter");
+        for (Element p : rootParams) {
+            if (!"REPORT_DATA_SOURCE".equals(p.getAttribute("name"))) {
+                continue;
+            }
+            Node parent = p.getParentNode();
+            if (parent != null) {
+                parent.removeChild(p);
+            }
+        }
+
+        // Xoa o subDataset scope
+        List<Element> subDatasets = descendantsByLocalName(root, "subDataset");
+        for (Element sub : subDatasets) {
+            List<Element> directParams = childElementsByLocalName(sub, "parameter");
+            for (Element p : directParams) {
+                if (!"REPORT_DATA_SOURCE".equals(p.getAttribute("name"))) {
+                    continue;
+                }
+                Node parent = p.getParentNode();
+                if (parent != null) {
+                    parent.removeChild(p);
+                }
+            }
+        }
+    }
+
+    private static void removeQueryStringsEverywhere(Element root) {
+        // Root dataset
+        List<Element> rootQuery = childElementsByLocalName(root, "queryString");
+        for (Element q : rootQuery) {
+            Node parent = q.getParentNode();
+            if (parent != null) {
+                parent.removeChild(q);
+            }
+        }
+
+        // Sub datasets
+        List<Element> subDatasets = descendantsByLocalName(root, "subDataset");
+        for (Element sub : subDatasets) {
+            List<Element> qs = childElementsByLocalName(sub, "queryString");
+            for (Element q : qs) {
+                Node parent = q.getParentNode();
+                if (parent != null) {
+                    parent.removeChild(q);
+                }
+            }
+        }
+    }
+
+    private static void ensureRootTableDataSourceParameter(Element root) {
+        final String paramName = "TABLE_DATA_SOURCE";
+        List<Element> directParams = childElementsByLocalName(root, "parameter");
+        for (Element p : directParams) {
+            if (!paramName.equals(p.getAttribute("name"))) {
+                continue;
+            }
+            p.setAttribute("class", "net.sf.jasperreports.engine.JRDataSource");
+            return;
+        }
+
+        Document doc = root.getOwnerDocument();
+        Element param = doc.createElementNS(root.getNamespaceURI(), "parameter");
+        param.setAttribute("name", paramName);
+        param.setAttribute("class", "net.sf.jasperreports.engine.JRDataSource");
+        Node insertionPoint = findRootParameterInsertionPoint(root);
+        if (insertionPoint != null) {
+            root.insertBefore(param, insertionPoint);
+        } else {
+            root.appendChild(param);
+        }
+    }
+
+    private static Node findRootParameterInsertionPoint(Element root) {
+        // Theo schema Jasper: property/style/subDataset dung truoc; parameter phai dung truoc query/field/bands.
+        Node child = root.getFirstChild();
+        while (child != null) {
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                if (isElementAnyOf(
+                        child,
+                        "queryString",
+                        "field",
+                        "sortField",
+                        "variable",
+                        "filterExpression",
+                        "group",
+                        "background",
+                        "title",
+                        "pageHeader",
+                        "columnHeader",
+                        "detail",
+                        "columnFooter",
+                        "pageFooter",
+                        "lastPageFooter",
+                        "summary",
+                        "noData")) {
+                    return child;
+                }
+            }
+            child = child.getNextSibling();
+        }
+        return null;
+    }
+
+    private static void replaceConnectionExpressionsWithDataSource(Element root) {
+        List<Element> datasetRuns = descendantsByLocalName(root, "datasetRun");
+        for (Element datasetRun : datasetRuns) {
+            Element connectionExpression = findFirstByLocalName(datasetRun, "connectionExpression");
+            if (connectionExpression == null) {
+                continue;
+            }
+
+            Element dataSourceExpression = datasetRun.getOwnerDocument().createElementNS(root.getNamespaceURI(), "dataSourceExpression");
+            dataSourceExpression.setTextContent("$P{REPORT_DATA_SOURCE}");
+            datasetRun.replaceChild(dataSourceExpression, connectionExpression);
+        }
+    }
+
+    private static void normalizeDatasetRunDataSourceExpressions(Element root) {
+        // Jasper tu gan REPORT_DATA_SOURCE theo JRDataSource truyen vao fill(...)
+        // Nen de dam bao table nhan dung datasource tu BE, ta dung parameter rieng: TABLE_DATA_SOURCE
+        List<Element> datasetRuns = descendantsByLocalName(root, "datasetRun");
+        for (Element datasetRun : datasetRuns) {
+            Element dse = findFirstByLocalName(datasetRun, "dataSourceExpression");
+            if (dse == null) {
+                continue;
+            }
+            String text = dse.getTextContent() == null ? "" : dse.getTextContent().trim();
+            if ("$P{REPORT_DATA_SOURCE}".equals(text)) {
+                dse.setTextContent("$P{TABLE_DATA_SOURCE}");
+            }
+        }
+    }
+
     private static Set<String> normalizeSelectedColumns(List<String> selectedColumns) {
         if (selectedColumns == null || selectedColumns.isEmpty()) {
             return Set.of();
@@ -243,7 +409,6 @@ public class InvoiceReportTemplateConfigService {
         }
 
         String normalized = raw.trim();
-        // Match Jasper field expression format like: $F{id}
         int start = normalized.indexOf("$F{");
         if (start < 0) {
             return "";
@@ -307,7 +472,7 @@ public class InvoiceReportTemplateConfigService {
         List<Element> result = new java.util.ArrayList<>();
         Node child = parent.getFirstChild();
         while (child != null) {
-            if (child.getNodeType() == Node.ELEMENT_NODE && localName.equals(child.getLocalName())) {
+            if (child.getNodeType() == Node.ELEMENT_NODE && matchesLocalName(child, localName)) {
                 result.add((Element) child);
             }
             child = child.getNextSibling();
@@ -328,7 +493,7 @@ public class InvoiceReportTemplateConfigService {
     }
 
     private static Element findFirstByLocalName(Element parent, String localName) {
-        if (localName.equals(parent.getLocalName())) {
+        if (matchesLocalName(parent, localName)) {
             return parent;
         }
         NodeList nodes = parent.getElementsByTagNameNS("*", localName);
@@ -337,6 +502,32 @@ public class InvoiceReportTemplateConfigService {
         }
         Node node = nodes.item(0);
         return node.getNodeType() == Node.ELEMENT_NODE ? (Element) node : null;
+    }
+
+    private static boolean matchesLocalName(Node node, String localName) {
+        String ln = node.getLocalName();
+        if (ln != null) {
+            return localName.equals(ln);
+        }
+        String name = node.getNodeName();
+        if (name == null) {
+            return false;
+        }
+        // Handle tag with prefix: jr:parameter, etc.
+        if (name.equals(localName)) {
+            return true;
+        }
+        int idx = name.indexOf(':');
+        return idx >= 0 && name.substring(idx + 1).equals(localName);
+    }
+
+    private static boolean isElementAnyOf(Node node, String... names) {
+        for (String name : names) {
+            if (matchesLocalName(node, name)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void upsertTemplate(String jrxmlName, byte[] jrxmlContent, String logoName, byte[] logoContent) {
@@ -389,21 +580,5 @@ public class InvoiceReportTemplateConfigService {
     private static String normalizeBasePath(Path reportDir) {
         String p = reportDir.toAbsolutePath().normalize().toString().replace('\\', '/');
         return p.endsWith("/") ? p : p + '/';
-    }
-
-    public record ReportTemplateSnapshot(
-            String jrxmlName,
-            byte[] jrxmlContent,
-            String logoName,
-            byte[] logoContent,
-            Instant updatedAt) {
-    }
-
-    public record RuntimeTemplate(
-            JasperReport compiledReport,
-            String repositoryBasePath,
-            String jrxmlName,
-            String logoName,
-            Instant updatedAt) {
     }
 }

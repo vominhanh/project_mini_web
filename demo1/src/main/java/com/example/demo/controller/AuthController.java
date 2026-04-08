@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
 
 import java.util.Map;
 
@@ -81,6 +82,11 @@ public class AuthController {
     public Map<String, Object> getInfo(@RequestHeader(value = "Authorization", required = false) String authorization) {
         String token = extractBearerToken(authorization);
         return remoteFederationAuthService.getInfo(token);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestBody(required = false) Map<String, Object> payload) {
+        return ResponseEntity.noContent().build();
     }
 
     private String resolveRedirectUri(String redirectUri) {
