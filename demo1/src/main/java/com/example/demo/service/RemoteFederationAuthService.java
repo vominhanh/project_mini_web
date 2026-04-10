@@ -1,8 +1,8 @@
 package com.example.demo.service;
 
-import com.example.demo.controller.dto.TokenRequest;
-import com.example.demo.controller.dto.TokenResponse;
-import com.example.demo.controller.dto.RegisterRequest;
+import com.example.demo.dto.RegisterRequest;
+import com.example.demo.dto.TokenRequest;
+import com.example.demo.dto.TokenResponse;
 
 import java.util.List;
 import java.util.Map;

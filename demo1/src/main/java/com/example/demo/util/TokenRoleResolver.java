@@ -1,4 +1,4 @@
-package com.example.demo.service.impl;
+package com.example.demo.util;
 
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
@@ -52,7 +52,7 @@ public final class TokenRoleResolver {
         return new ArrayList<>(roles);
     }
 
-    static Map<String, Object> extractCurrentUser(String accessToken) {
+    public static Map<String, Object> extractCurrentUser(String accessToken) {
         Map<String, Object> claims = parseClaims(accessToken);
         if (claims.isEmpty()) {
             return Map.of();
@@ -75,7 +75,6 @@ public final class TokenRoleResolver {
                 stringValue(claims.get("username"))
         );
 
-        // Final fallback to avoid returning an empty email field in UI.
         if (email.isBlank()) {
             email = firstNonBlank(username, name, id);
         }
@@ -102,7 +101,7 @@ public final class TokenRoleResolver {
         return user;
     }
 
-    static Map<String, Object> extractAllUserClaims(String accessToken) {
+    public static Map<String, Object> extractAllUserClaims(String accessToken) {
         return parseClaims(accessToken);
     }
 

@@ -1,4 +1,4 @@
-package com.example.demo.controller.dto;
+package com.example.demo.dto;
 
 public class ReportUserRow {
     private final Long id;

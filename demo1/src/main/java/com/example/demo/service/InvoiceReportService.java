@@ -1,7 +1,8 @@
 package com.example.demo.service;
 
-import com.example.demo.controller.dto.ReportUserRow;
-import com.example.demo.controller.dto.RuntimeTemplate;
+import com.example.demo.dto.ReportUserRow;
+import com.example.demo.dto.RuntimeTemplate;
+import com.example.demo.entity.InvoiceReportTemplate;
 import lombok.RequiredArgsConstructor;
 import net.sf.jasperreports.engine.DefaultJasperReportsContext;
 import net.sf.jasperreports.engine.JRDataSource;
@@ -14,6 +15,7 @@ import net.sf.jasperreports.engine.export.ooxml.JRXlsxExporter;
 import net.sf.jasperreports.engine.fill.JRFiller;
 import net.sf.jasperreports.engine.fill.SimpleJasperReportSource;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
+import net.sf.jasperreports.engine.data.JRMapCollectionDataSource;
 import net.sf.jasperreports.export.SimpleExporterInput;
 import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput;
 import net.sf.jasperreports.export.SimpleXlsxReportConfiguration;
@@ -23,6 +25,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Locale;
@@ -33,6 +36,7 @@ import java.util.Map;
 public class InvoiceReportService {
 
     private static final String TABLE_DATA_SOURCE_PARAM = "TABLE_DATA_SOURCE";
+    private static final String TEMPLATE_DATA_SOURCE_PARAM = "TEMPLATE_DATA_SOURCE";
 
     private final RemoteFederationAuthService remoteFederationAuthService;
     private final InvoiceReportTemplateConfigService templateConfigService;
@@ -51,9 +55,11 @@ public class InvoiceReportService {
         }
         List<ReportUserRow> rows = toReportRows(reportUsers);
         JRDataSource tableDataSource = new JRBeanCollectionDataSource(rows);
+        JRDataSource templateDataSource = new JRMapCollectionDataSource(List.of(toTemplateRowMap()));
 
         Map<String, Object> parameters = new HashMap<>();
         parameters.put(TABLE_DATA_SOURCE_PARAM, tableDataSource);
+        parameters.put(TEMPLATE_DATA_SOURCE_PARAM, templateDataSource);
 
         JasperReportsContext ctx = DefaultJasperReportsContext.getInstance();
         var rc = SimpleRepositoryResourceContext.of(runtime.repositoryBasePath());
@@ -62,6 +68,17 @@ public class InvoiceReportService {
                 SimpleJasperReportSource.from(runtime.compiledReport(), null, rc),
                 parameters,
                 new JREmptyDataSource(1));
+    }
+
+    private Map<String, Object> toTemplateRowMap() {
+        InvoiceReportTemplate snapshot = templateConfigService.getCurrentTemplate();
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("jrxml_name", safeText(snapshot.jrxmlName()));
+        row.put("jrxml_content", formatBytes(snapshot.jrxmlContent()));
+        row.put("logo_name", safeText(snapshot.logoName()));
+        row.put("logo_content", formatBytes(snapshot.logoContent()));
+        row.put("updated_at", snapshot.updatedAt() == null ? "" : snapshot.updatedAt().toString());
+        return row;
     }
 
     public void exportPdf(OutputStream out, List<String> selectedColumns, String accessToken) throws JRException {
@@ -151,5 +168,16 @@ public class InvoiceReportService {
             return "admin";
         }
         return "user";
+    }
+
+    private static String safeText(String value) {
+        return value == null ? "" : value;
+    }
+
+    private static String formatBytes(byte[] bytes) {
+        if (bytes == null) {
+            return "0 bytes";
+        }
+        return bytes.length + " bytes";
     }
 }

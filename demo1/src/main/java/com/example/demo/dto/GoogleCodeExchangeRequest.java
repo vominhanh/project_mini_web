@@ -1,4 +1,4 @@
-package com.example.demo.controller.dto;
+package com.example.demo.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,9 +9,8 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class TokenRequest {
-    private String username;
-    private String password;
+public class GoogleCodeExchangeRequest {
+    private String code;
+    private String redirectUri;
 
 }
-

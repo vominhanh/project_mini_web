@@ -1,10 +1,11 @@
 package com.example.demo.controller;
 
-import com.example.demo.controller.dto.GoogleCodeExchangeRequest;
-import com.example.demo.controller.dto.TokenRequest;
-import com.example.demo.controller.dto.TokenResponse;
-import com.example.demo.controller.dto.RegisterRequest;
+import com.example.demo.dto.GoogleCodeExchangeRequest;
+import com.example.demo.dto.RegisterRequest;
+import com.example.demo.dto.TokenRequest;
+import com.example.demo.dto.TokenResponse;
 import com.example.demo.service.RemoteFederationAuthService;
+import com.example.demo.util.BearerTokenExtractor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -68,19 +69,19 @@ public class AuthController {
 
     @GetMapping("/view")
     public Map<String, Object> view(@RequestHeader(value = "Authorization", required = false) String authorization) {
-        String token = extractBearerToken(authorization);
+        String token = BearerTokenExtractor.fromAuthorizationHeader(authorization);
         return remoteFederationAuthService.resolveView(token);
     }
 
     @GetMapping("/me")
     public java.util.List<Map<String, Object>> me(@RequestHeader(value = "Authorization", required = false) String authorization) {
-        String token = extractBearerToken(authorization);
-        return remoteFederationAuthService. getAllUsers(token);
+        String token = BearerTokenExtractor.fromAuthorizationHeader(authorization);
+        return remoteFederationAuthService.getAllUsers(token);
     }
 
     @GetMapping("/getinfo")
     public Map<String, Object> getInfo(@RequestHeader(value = "Authorization", required = false) String authorization) {
-        String token = extractBearerToken(authorization);
+        String token = BearerTokenExtractor.fromAuthorizationHeader(authorization);
         return remoteFederationAuthService.getInfo(token);
     }
 
@@ -99,15 +100,5 @@ public class AuthController {
         throw new IllegalArgumentException("Thieu redirect URI");
     }
 
-    private String extractBearerToken(String authorization) {
-        if (authorization == null) {
-            return "";
-        }
-        String bearerPrefix = "Bearer ";
-        if (authorization.startsWith(bearerPrefix)) {
-            return authorization.substring(bearerPrefix.length()).trim();
-        }
-        return authorization.trim();
-    }
 } 
 

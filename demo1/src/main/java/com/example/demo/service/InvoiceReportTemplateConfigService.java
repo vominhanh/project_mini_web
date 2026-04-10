@@ -1,14 +1,14 @@
 package com.example.demo.service;
 
-import com.example.demo.controller.dto.ReportTemplateSnapshot;
-import com.example.demo.controller.dto.RuntimeTemplate;
+import com.example.demo.dto.RuntimeTemplate;
+import com.example.demo.entity.InvoiceReportTemplate;
+import com.example.demo.repository.InvoiceReportTemplateRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperReport;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -40,32 +40,18 @@ import javax.xml.transform.stream.StreamResult;
 @RequiredArgsConstructor
 public class InvoiceReportTemplateConfigService {
 
-    private static final int SINGLE_TEMPLATE_ID = 1;
     private static final String DEFAULT_LOGO_ALIAS = "Eximbank_Logo.png";
     private static final String DEFAULT_TEMPLATE_CLASSPATH = "report/Invoice.jrxml";
     private static final String DEFAULT_LOGO_CLASSPATH = "report/Eximbank_Logo.png";
     private static final Set<String> ALLOWED_EXPORT_COLUMNS = Set.of("id", "firstname", "lastname", "email", "username", "role");
 
-    private final JdbcTemplate jdbcTemplate;
+    private final InvoiceReportTemplateRepository invoiceReportTemplateRepository;
 
     @PostConstruct
     void init() throws IOException {
-        jdbcTemplate.execute("""
-                CREATE TABLE IF NOT EXISTS invoice_report_template (
-                    id INT PRIMARY KEY,
-                    jrxml_name VARCHAR(255) NOT NULL,
-                    jrxml_content BYTEA NOT NULL,
-                    logo_name VARCHAR(255) NOT NULL,
-                    logo_content BYTEA NOT NULL,
-                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-                )
-                """);
+        invoiceReportTemplateRepository.ensureSchema();
 
-        Integer count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM invoice_report_template WHERE id = ?",
-                Integer.class,
-                SINGLE_TEMPLATE_ID);
-        if (count == null || count == 0) {
+        if (invoiceReportTemplateRepository.countById(InvoiceReportTemplateRepository.SINGLE_TEMPLATE_ID) == 0) {
             upsertTemplate(
                     filenameFromPath(DEFAULT_TEMPLATE_CLASSPATH),
                     readClasspathFile(DEFAULT_TEMPLATE_CLASSPATH),
@@ -74,32 +60,17 @@ public class InvoiceReportTemplateConfigService {
         }
     }
 
-    public ReportTemplateSnapshot getCurrentTemplate() {
-        List<ReportTemplateSnapshot> rows = jdbcTemplate.query(
-                """
-                        SELECT jrxml_name, jrxml_content, logo_name, logo_content, updated_at
-                        FROM invoice_report_template
-                        WHERE id = ?
-                        """,
-                (rs, rowNum) -> new ReportTemplateSnapshot(
-                        rs.getString("jrxml_name"),
-                        rs.getBytes("jrxml_content"),
-                        rs.getString("logo_name"),
-                        rs.getBytes("logo_content"),
-                        rs.getTimestamp("updated_at").toInstant()),
-                SINGLE_TEMPLATE_ID);
-        if (rows.isEmpty()) {
-            throw new IllegalStateException("Khong tim thay cau hinh report trong database.");
-        }
-        return rows.getFirst();
+    public InvoiceReportTemplate getCurrentTemplate() {
+        return invoiceReportTemplateRepository.findById(InvoiceReportTemplateRepository.SINGLE_TEMPLATE_ID)
+                .orElseThrow(() -> new IllegalStateException("Khong tim thay cau hinh report trong database."));
     }
 
-    public ReportTemplateSnapshot updateTemplate(
+    public InvoiceReportTemplate updateTemplate(
             String jrxmlName,
             byte[] jrxmlContent,
             String logoName,
             byte[] logoContent) {
-        ReportTemplateSnapshot current = getCurrentTemplate();
+        InvoiceReportTemplate current = getCurrentTemplate();
         String nextJrxmlName = hasText(jrxmlName) ? jrxmlName.trim() : current.jrxmlName();
         byte[] nextJrxmlContent = nonEmptyBytes(jrxmlContent) ? jrxmlContent : current.jrxmlContent();
         String nextLogoName = hasText(logoName) ? logoName.trim() : current.logoName();
@@ -114,9 +85,10 @@ public class InvoiceReportTemplateConfigService {
     }
 
     public RuntimeTemplate compileCurrentTemplate(List<String> selectedColumns) throws JRException, IOException {
-        ReportTemplateSnapshot current = getCurrentTemplate();
+        InvoiceReportTemplate current = getCurrentTemplate();
         byte[] effectiveJrxml = filterJrxmlColumns(current.jrxmlContent(), selectedColumns);
         effectiveJrxml = normalizeForBeanDataSource(effectiveJrxml);
+        effectiveJrxml = ensureTemplateDataSourceParameterFallback(effectiveJrxml);
         JasperReport compiled;
         try (InputStream in = stripPdfFonts(new ByteArrayInputStream(effectiveJrxml))) {
             compiled = JasperCompileManager.compileReport(in);
@@ -125,7 +97,6 @@ public class InvoiceReportTemplateConfigService {
         Path reportDir = Files.createTempDirectory("jasper-db-res-");
         Files.write(reportDir.resolve(current.logoName()), current.logoContent());
         if (!DEFAULT_LOGO_ALIAS.equals(current.logoName())) {
-            // Backward compatibility: many legacy jrxml templates reference this fixed logo name.
             Files.write(reportDir.resolve(DEFAULT_LOGO_ALIAS), current.logoContent());
         }
         return new RuntimeTemplate(
@@ -213,11 +184,13 @@ public class InvoiceReportTemplateConfigService {
 
             removeReportDataSourceParametersEverywhere(root);
             ensureRootTableDataSourceParameter(root);
+            ensureRootTemplateDataSourceParameter(root);
 
             removeQueryStringsEverywhere(root);
             
             replaceConnectionExpressionsWithDataSource(root);
             normalizeDatasetRunDataSourceExpressions(root);
+            normalizeSummaryTableLayout(root);
 
             Transformer tf = TransformerFactory.newInstance().newTransformer();
             tf.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
@@ -230,8 +203,33 @@ public class InvoiceReportTemplateConfigService {
         }
     }
 
+    private static byte[] ensureTemplateDataSourceParameterFallback(byte[] jrxmlContent) {
+        if (jrxmlContent == null || jrxmlContent.length == 0) {
+            return jrxmlContent;
+        }
+
+        String xml = new String(jrxmlContent, StandardCharsets.UTF_8);
+        if (!xml.contains("$P{TEMPLATE_DATA_SOURCE}")) {
+            return jrxmlContent;
+        }
+        if (xml.contains("name=\"TEMPLATE_DATA_SOURCE\"")) {
+            return jrxmlContent;
+        }
+
+        String parameter = "\n\t<parameter name=\"TEMPLATE_DATA_SOURCE\" class=\"net.sf.jasperreports.engine.JRDataSource\"/>\n";
+        int insertAt = xml.indexOf("<queryString");
+        if (insertAt < 0) {
+            insertAt = xml.indexOf("<field ");
+        }
+        if (insertAt < 0) {
+            return jrxmlContent;
+        }
+
+        String patched = xml.substring(0, insertAt) + parameter + xml.substring(insertAt);
+        return patched.getBytes(StandardCharsets.UTF_8);
+    }
+
     private static void removeReportDataSourceParametersEverywhere(Element root) {
-        // Xoa o root scope (neu template upload co khai bao)
         List<Element> rootParams = childElementsByLocalName(root, "parameter");
         for (Element p : rootParams) {
             if (!"REPORT_DATA_SOURCE".equals(p.getAttribute("name"))) {
@@ -305,8 +303,30 @@ public class InvoiceReportTemplateConfigService {
         }
     }
 
+    private static void ensureRootTemplateDataSourceParameter(Element root) {
+        final String paramName = "TEMPLATE_DATA_SOURCE";
+        List<Element> directParams = childElementsByLocalName(root, "parameter");
+        for (Element p : directParams) {
+            if (!paramName.equals(p.getAttribute("name"))) {
+                continue;
+            }
+            p.setAttribute("class", "net.sf.jasperreports.engine.JRDataSource");
+            return;
+        }
+
+        Document doc = root.getOwnerDocument();
+        Element param = doc.createElementNS(root.getNamespaceURI(), "parameter");
+        param.setAttribute("name", paramName);
+        param.setAttribute("class", "net.sf.jasperreports.engine.JRDataSource");
+        Node insertionPoint = findRootParameterInsertionPoint(root);
+        if (insertionPoint != null) {
+            root.insertBefore(param, insertionPoint);
+        } else {
+            root.appendChild(param);
+        }
+    }
+
     private static Node findRootParameterInsertionPoint(Element root) {
-        // Theo schema Jasper: property/style/subDataset dung truoc; parameter phai dung truoc query/field/bands.
         Node child = root.getFirstChild();
         while (child != null) {
             if (child.getNodeType() == Node.ELEMENT_NODE) {
@@ -351,8 +371,7 @@ public class InvoiceReportTemplateConfigService {
     }
 
     private static void normalizeDatasetRunDataSourceExpressions(Element root) {
-        // Jasper tu gan REPORT_DATA_SOURCE theo JRDataSource truyen vao fill(...)
-        // Nen de dam bao table nhan dung datasource tu BE, ta dung parameter rieng: TABLE_DATA_SOURCE
+ 
         List<Element> datasetRuns = descendantsByLocalName(root, "datasetRun");
         for (Element datasetRun : datasetRuns) {
             Element dse = findFirstByLocalName(datasetRun, "dataSourceExpression");
@@ -360,9 +379,51 @@ public class InvoiceReportTemplateConfigService {
                 continue;
             }
             String text = dse.getTextContent() == null ? "" : dse.getTextContent().trim();
-            if ("$P{REPORT_DATA_SOURCE}".equals(text)) {
+            String subDataset = datasetRun.getAttribute("subDataset");
+            if ("Dataset3".equals(subDataset)) {
+                if ("$P{REPORT_DATA_SOURCE}".equals(text) || text.contains("TEMPLATE_DATA_SOURCE")) {
+                    dse.setTextContent("((net.sf.jasperreports.engine.JRDataSource)$P{REPORT_PARAMETERS_MAP}.get(\"TEMPLATE_DATA_SOURCE\"))");
+                }
+            } else if ("$P{REPORT_DATA_SOURCE}".equals(text)) {
                 dse.setTextContent("$P{TABLE_DATA_SOURCE}");
             }
+        }
+    }
+
+    private static void normalizeSummaryTableLayout(Element root) {
+        List<Element> summarySections = childElementsByLocalName(root, "summary");
+        if (summarySections.isEmpty()) {
+            return;
+        }
+        Element summary = summarySections.getFirst();
+        List<Element> bands = childElementsByLocalName(summary, "band");
+        if (bands.isEmpty()) {
+            return;
+        }
+
+        Element band = bands.getFirst();
+        List<Element> componentElements = childElementsByLocalName(band, "componentElement");
+        if (componentElements.size() < 2) {
+            return;
+        }
+
+        for (Element component : componentElements) {
+            Element datasetRun = findFirstByLocalName(component, "datasetRun");
+            if (datasetRun == null) {
+                continue;
+            }
+            if (!"Dataset3".equals(datasetRun.getAttribute("subDataset"))) {
+                continue;
+            }
+
+            Element reportElement = findFirstByLocalName(component, "reportElement");
+            if (reportElement == null) {
+                continue;
+            }
+
+            // Float giup bang metadata xuong sau bang users khi bang users co nhieu dong.
+            reportElement.setAttribute("positionType", "Float");
+            reportElement.setAttribute("y", "0");
         }
     }
 
@@ -531,20 +592,15 @@ public class InvoiceReportTemplateConfigService {
     }
 
     private void upsertTemplate(String jrxmlName, byte[] jrxmlContent, String logoName, byte[] logoContent) {
-        jdbcTemplate.update(
-                """
-                        INSERT INTO invoice_report_template(id, jrxml_name, jrxml_content, logo_name, logo_content, updated_at)
-                        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                        ON CONFLICT (id)
-                        DO UPDATE SET
-                            jrxml_name = EXCLUDED.jrxml_name,
-                            jrxml_content = EXCLUDED.jrxml_content,
-                            logo_name = EXCLUDED.logo_name,
-                            logo_content = EXCLUDED.logo_content,
-                            updated_at = CURRENT_TIMESTAMP
-                        """,
-                SINGLE_TEMPLATE_ID, jrxmlName, jrxmlContent, logoName, logoContent);
+        invoiceReportTemplateRepository.upsert(
+                InvoiceReportTemplateRepository.SINGLE_TEMPLATE_ID,
+                jrxmlName,
+                jrxmlContent,
+                logoName,
+                logoContent);
     }
+
+
 
     private byte[] readClasspathFile(String location) throws IOException {
         ClassPathResource resource = new ClassPathResource(location.trim());

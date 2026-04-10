@@ -2,6 +2,8 @@ package com.example.demo.controller;
 
 import com.example.demo.service.InvoiceReportService;
 import com.example.demo.service.InvoiceReportTemplateConfigService;
+import com.example.demo.service.strategy.report.InvoiceReportExportStrategy;
+import com.example.demo.util.BearerTokenExtractor;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jasperreports.engine.JRException;
 import org.springframework.http.ContentDisposition;
@@ -29,21 +31,18 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 @RestController
 @RequestMapping("/api/reports/invoice")
 public class InvoiceReportController {
-    private static final String FORMAT_PDF = "pdf";
-    private static final String FORMAT_XLSX = "xlsx";
-    private static final String XLSX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-    private static final String FILENAME_PREFIX = "facepay-auth-log-";
-    private static final String BEARER_PREFIX = "Bearer ";
 
     private final InvoiceReportService invoiceReportService;
     private final InvoiceReportTemplateConfigService templateConfigService;
-
+    private final List<InvoiceReportExportStrategy> exportStrategies;
 
     public InvoiceReportController(
             InvoiceReportService invoiceReportService,
-            InvoiceReportTemplateConfigService templateConfigService) {
+            InvoiceReportTemplateConfigService templateConfigService,
+            List<InvoiceReportExportStrategy> exportStrategies) {
         this.invoiceReportService = invoiceReportService;
         this.templateConfigService = templateConfigService;
+        this.exportStrategies = exportStrategies;
     }
 
     @GetMapping("/export")
@@ -53,7 +52,7 @@ public class InvoiceReportController {
             @RequestParam(name = "columns", required = false) List<String> columns
         ) throws JRException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        String accessToken = extractBearerToken(authorization);
+        String accessToken = BearerTokenExtractor.fromAuthorizationHeader(authorization);
         ExportFileMeta export = exportByFormat(format, out, columns, accessToken);
         return buildDownloadResponse(out, export);
     }
@@ -87,32 +86,17 @@ public class InvoiceReportController {
             String updatedAt) {
     }
 
-    private String extractBearerToken(String authorization) {
-        if (authorization == null) {
-            return "";
-        }
-        if (authorization.startsWith(BEARER_PREFIX)) {
-            return authorization.substring(BEARER_PREFIX.length()).trim();
-        }
-        return authorization.trim();
-    }
-
     private ExportFileMeta exportByFormat(
             String format,
             ByteArrayOutputStream out,
             List<String> columns,
             String accessToken) throws JRException {
-        if (FORMAT_PDF.equalsIgnoreCase(format)) {
-            invoiceReportService.exportPdf(out, columns, accessToken);
-            return new ExportFileMeta(
-                    FILENAME_PREFIX + LocalDate.now() + "." + FORMAT_PDF,
-                    MediaType.APPLICATION_PDF);
-        }
-        if (FORMAT_XLSX.equalsIgnoreCase(format)) {
-            invoiceReportService.exportXlsx(out, columns, accessToken);
-            return new ExportFileMeta(
-                    FILENAME_PREFIX + LocalDate.now() + "." + FORMAT_XLSX,
-                    MediaType.parseMediaType(XLSX_MEDIA_TYPE));
+        LocalDate today = LocalDate.now();
+        for (InvoiceReportExportStrategy strategy : exportStrategies) {
+            if (strategy.supports(format)) {
+                strategy.export(invoiceReportService, out, columns, accessToken);
+                return new ExportFileMeta(strategy.buildFilename(today), strategy.mediaType());
+            }
         }
         throw new IllegalArgumentException("Format must be pdf or xlsx");
     }

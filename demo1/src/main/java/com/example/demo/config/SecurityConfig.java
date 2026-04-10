@@ -1,6 +1,6 @@
 package com.example.demo.config;
 
-import com.example.demo.service.impl.TokenRoleResolver;
+import com.example.demo.util.TokenRoleResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
