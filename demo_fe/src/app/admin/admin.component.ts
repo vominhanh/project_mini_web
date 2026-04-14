@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { BookingComponent } from './booking/booking.component';
 import { CreateRoomComponent } from './create-room/create-room.component';
 import { ExportViewComponent } from './export-view/export-view.component';
@@ -13,7 +13,7 @@ type AdminPanel = 'booking' | 'create_room' | 'export' | 'settings';
     templateUrl: './admin.component.html',
     styleUrl: './admin.component.css'
 })
-export class AdminComponent implements OnInit {
+export class AdminComponent implements OnChanges {
     @Input() authView: {
         effectiveRole: string;
         roles: string[];
@@ -38,10 +38,19 @@ export class AdminComponent implements OnInit {
     activePanel: AdminPanel = 'create_room';
     headerMenuOpen = false;
 
-    ngOnInit(): void {
+    ngOnChanges(changes: SimpleChanges): void {
+        if (changes['authView']) {
+            this.syncDefaultPanel();
+        }
+    }
+
+    private syncDefaultPanel(): void {
         if (this.authView.effectiveRole.toLowerCase() === 'admin') {
             this.activePanel = 'booking';
-        } else {
+            return;
+        }
+
+        if (this.activePanel === 'booking' || this.activePanel === 'export') {
             this.activePanel = 'create_room';
         }
     }
