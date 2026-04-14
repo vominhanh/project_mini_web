@@ -1,0 +1,104 @@
+.export-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    max-width: 900px;
+}
+.panel-header h2 {
+    margin: 0 0 8px;
+    color: #0f172a;
+    font-size: 24px;
+}
+.panel-header p {
+    color: #64748b;
+    margin: 0;
+    font-size: 15px;
+}
+.actions-card, .cols-card, .preview-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.export-btn-group {
+    display: flex;
+    gap: 16px;
+}
+.btn-download {
+    padding: 14px 28px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #ffffff;
+    cursor: pointer;
+    background: #475569;
+    flex: 1;
+    text-align: center;
+}
+.btn-download:hover {
+    background: #334155;
+}
+.btn-download.excel {
+    background: #1e293b;
+}
+.btn-download.excel:hover {
+    background: #0f172a;
+}
+.btn-download:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+.cols-card h3, .preview-card h3 {
+    margin: 0 0 8px;
+    color: #0f172a;
+    font-size: 18px;
+}
+.hint {
+    color: #64748b;
+    font-size: 14px;
+    margin: 0 0 20px;
+}
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+}
+.checkbox-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+.checkbox-field input {
+    width: 18px;
+    height: 18px;
+    accent-color: #475569;
+}
+.box-label {
+    font-size: 15px;
+    color: #334155;
+    font-weight: 500;
+}
+.stats-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.stats-list li {
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    font-size: 15px;
+}
+.stats-list li:last-child {
+    border-bottom: none;
+}
+.stats-list li span {
+    color: #475569;
+}
+.stats-list li strong {
+    color: #0f172a;
+}

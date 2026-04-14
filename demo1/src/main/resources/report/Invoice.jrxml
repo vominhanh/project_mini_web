@@ -349,15 +349,15 @@ from  users]]>
 	<detail>
 		<band height="111">
 			<componentElement>
-				<reportElement x="-11" y="10" width="559" height="63" uuid="95d92b54-4367-4127-ae61-af4d4f263718">
+				<reportElement x="8" y="10" width="548" height="63" uuid="95d92b54-4367-4127-ae61-af4d4f263718">
 					<property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.VerticalRowLayout"/>
 					<property name="com.jaspersoft.studio.table.style.table_header" value="Table 1_TH"/>
 					<property name="com.jaspersoft.studio.table.style.column_header" value="Table 1_CH"/>
 					<property name="com.jaspersoft.studio.table.style.detail" value="Table 1_TD"/>
 				</reportElement>
 				<jr:table xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
-					<datasetRun subDataset="Dataset2" uuid="f6a2eba9-266a-40ec-b083-b6ae157e49e9">
-						<dataSourceExpression><![CDATA[$P{REPORT_DATA_SOURCE}]]></dataSourceExpression>
+					<datasetRun subDataset="Dataset2" uuid="47357b4f-4cbf-47f3-91c3-565de18e1793">
+						<dataSourceExpression><![CDATA[$P{TABLE_DATA_SOURCE}]]></dataSourceExpression>
 					</datasetRun>
 					<jr:column width="40" uuid="bbad8887-0615-4377-8103-61651c1305a9">
 						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column1"/>
@@ -475,9 +475,7 @@ from  users]]>
 					<property name="com.jaspersoft.studio.table.style.detail" value="Table 2_TD"/>
 				</reportElement>
 				<jr:table xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
-					<datasetRun subDataset="Dataset3" uuid="d244fa0f-d5c1-44e1-bf8b-5e6f13e33836">
-						<dataSourceExpression><![CDATA[((net.sf.jasperreports.engine.JRDataSource)$P{REPORT_PARAMETERS_MAP}.get("TEMPLATE_DATA_SOURCE"))]]></dataSourceExpression>
-					</datasetRun>
+					<datasetRun subDataset="Dataset3" uuid="e87de601-e1b7-4124-857c-fab2bb31c752"/>
 					<jr:column width="120" uuid="a0188f84-6992-489a-a07b-849c60da0d9c">
 						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column1"/>
 						<jr:columnHeader style="Table 2_CH" height="30" rowSpan="1">

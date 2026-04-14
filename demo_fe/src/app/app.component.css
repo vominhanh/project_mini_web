@@ -17,10 +17,11 @@
 .auth-page.authenticated {
     align-items: stretch;
     justify-content: stretch;
-    padding: 16px;
+    padding: 0;
 }
 
 .auth-page.authenticated app-home,
+.auth-page.authenticated app-admin,
 .auth-page.authenticated app-export {
     display: block;
     width: 100%;

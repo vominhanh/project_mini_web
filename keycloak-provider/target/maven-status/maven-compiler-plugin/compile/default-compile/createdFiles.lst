@@ -1,6 +1,0 @@
-org\example\model\UserAdapter.class
-org\example\model\User.class
-org\example\provider\CustomUserStorageProviderFactory.class
-org\example\Main.class
-org\example\provider\CustomUserStorageProvider.class
-org\example\constants\JpaStorageProviderConstants.class

@@ -1,0 +1,92 @@
+<section class="admin-layout" (click)="closeHeaderMenu()">
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-logo">RoomNow</div>
+            <p class="brand-sub">DASHBOARD</p>
+        </div>
+        <nav class="sidebar-nav">
+
+            @if (authView.effectiveRole.toLowerCase() === 'admin') {
+            <button type="button" class="nav-item" [class.active]="activePanel === 'booking'"
+                (click)="setPanel('booking')">
+                Trang chủ
+            </button>
+            }
+
+            <button type="button" class="nav-item" [class.active]="activePanel === 'create_room'"
+                (click)="setPanel('create_room')">
+                Tạo phòng
+            </button>
+
+            @if (authView.effectiveRole.toLowerCase() === 'admin') {
+            <button type="button" class="nav-item" [class.active]="activePanel === 'export'"
+                (click)="setPanel('export')">
+                Export
+            </button>
+            }
+
+            <div style="flex: 1;"></div>
+            <button type="button" class="nav-item" [class.active]="activePanel === 'settings'"
+                (click)="setPanel('settings')">
+                Setting
+            </button>
+        </nav>
+
+        <div class="sidebar-user">
+            <div class="user-avatar">{{ (userInfo?.currentUser?.name || 'U').charAt(0).toUpperCase() }}</div>
+            <div class="user-info">
+                <strong>{{ userInfo?.currentUser?.name || userInfo?.currentUser?.username || 'User' }}</strong>
+                <span>{{ authView.effectiveRole }}</span>
+            </div>
+            <button class="logout-btn" (click)="onLogout()">Đăng xuất</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-search">
+                <input type="text" placeholder="Search anything..." />
+            </div>
+            <div class="header-actions">
+                <div class="header-dropdown-container" (click)="$event.stopPropagation()">
+                    <button class="header-profile" (click)="toggleHeaderMenu()">
+                        {{ (userInfo?.currentUser?.name || 'U').charAt(0).toUpperCase() }}
+                    </button>
+                    @if (headerMenuOpen) {
+                    <div class="header-dropdown-menu">
+                        <button type="button" class="dropdown-item" (click)="onUpdateProfile()">Cập nhật thông
+                            tin</button>
+                        <button type="button" class="dropdown-item" (click)="onChangePassword()">Đổi mật khẩu</button>
+                        <div class="dropdown-divider"></div>
+                        <button type="button" class="dropdown-item danger" (click)="onLogout()">Đăng xuất</button>
+                    </div>
+                    }
+                </div>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div class="page-title">
+                <h1>{{ activePanel === 'booking' ? 'Trang chủ' : (activePanel === 'create_room' ? 'Tạo phòng mới' :
+                    activePanel === 'export' ? 'Thống kê & Xuất dữ liệu' : 'Cài đặt hệ thống') }}</h1>
+            </div>
+
+            @if (activePanel === 'booking') {
+            <app-admin-booking [users]="users" [authView]="authView"></app-admin-booking>
+            }
+            @if (activePanel === 'create_room') {
+            <app-admin-create-room></app-admin-create-room>
+            }
+            @if (activePanel === 'export') {
+            <app-admin-export-view [users]="users" [authView]="authView" [token]="token"></app-admin-export-view>
+            }
+            @if (activePanel === 'settings') {
+            <div
+                style="background: #fff; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <h3>Settings</h3>
+                <p style="color: #64748b; font-size: 15px;">Setting panel is under construction.</p>
+            </div>
+            }
+        </div>
+    </main>
+</section>

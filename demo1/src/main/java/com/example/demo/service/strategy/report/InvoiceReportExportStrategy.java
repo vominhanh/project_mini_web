@@ -1,6 +1,6 @@
 package com.example.demo.service.strategy.report;
 
-import com.example.demo.service.InvoiceReportService;
+import com.example.demo.service.jasper.InvoiceReportService;
 import net.sf.jasperreports.engine.JRException;
 import org.springframework.http.MediaType;
 

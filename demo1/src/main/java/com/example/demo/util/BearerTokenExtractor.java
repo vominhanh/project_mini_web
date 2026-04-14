@@ -1,6 +1,6 @@
 package com.example.demo.util;
 
-import com.example.demo.constant.HttpAuthConstants;
+import com.example.demo.constant.auth.HttpAuthConstants;
 
 /**
  * Trích access token từ header Authorization (DRY cho controller).

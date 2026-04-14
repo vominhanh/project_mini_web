@@ -77,12 +77,7 @@
   }
 
   @if (isAuthenticated()) {
-  @if (isExportPage()) {
-  <app-export [authView]="authView" [userInfo]="userInfo" [users]="users" [token]="token" [refreshToken]="refreshToken"
-    [backendBaseUrl]="backendBaseUrl" (backClicked)="goToHome()"></app-export>
-  } @else {
-  <app-home [authView]="authView" [token]="token" [refreshToken]="refreshToken" [userInfo]="userInfo" [users]="users"
-    (logoutClicked)="logout()" (exportClicked)="goToExport()"></app-home>
-  }
+  <app-admin [authView]="authView" [token]="token" [refreshToken]="refreshToken" [userInfo]="userInfo" [users]="users"
+    (logoutClicked)="logout()" (forgotPasswordClicked)="forgotPassword()"></app-admin>
   }
 </main>

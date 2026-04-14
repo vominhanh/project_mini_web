@@ -1,7 +1,7 @@
 package com.example.demo.service.strategy.report;
 
-import com.example.demo.constant.InvoiceReportExportConstants;
-import com.example.demo.service.InvoiceReportService;
+import com.example.demo.constant.report.InvoiceReportExportConstants;
+import com.example.demo.service.jasper.InvoiceReportService;
 import net.sf.jasperreports.engine.JRException;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;

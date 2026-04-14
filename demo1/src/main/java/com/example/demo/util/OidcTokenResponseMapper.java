@@ -1,6 +1,6 @@
 package com.example.demo.util;
 
-import com.example.demo.dto.TokenResponse;
+import com.example.demo.dto.response.TokenResponse;
 
 import java.util.List;
 import java.util.Map;

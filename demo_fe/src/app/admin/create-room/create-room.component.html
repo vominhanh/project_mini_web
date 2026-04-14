@@ -1,0 +1,49 @@
+<section class="create-room-panel">
+    <div class="panel-header">
+        <h2>Tạo phòng mới</h2>
+        <p>Điền thông tin chi tiết để thêm phòng vào hệ thống.</p>
+    </div>
+
+    <form class="room-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Tên phòng</label>
+                <input type="text" placeholder="VD: Phòng VIP 101" />
+            </div>
+            <div class="form-group">
+                <label>Loại phòng</label>
+                <select>
+                    <option>Standard</option>
+                    <option>Deluxe</option>
+                    <option>Suite</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Giá một đêm (VND)</label>
+                <input type="number" placeholder="VD: 500000" />
+            </div>
+            <div class="form-group">
+                <label>Số người tối đa</label>
+                <input type="number" placeholder="VD: 2" />
+            </div>
+        </div>
+
+        <div class="form-group full-width">
+            <label>Tiện ích</label>
+            <input type="text" placeholder="VD: Wifi, Điều hòa, Bồn tắm" />
+        </div>
+
+        <div class="form-group full-width">
+            <label>Mô tả chi tiết</label>
+            <textarea rows="4" placeholder="Nhập mô tả về phòng..."></textarea>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn-cancel">Hủy</button>
+            <button type="button" class="btn-submit">Lưu phòng</button>
+        </div>
+    </form>
+</section>

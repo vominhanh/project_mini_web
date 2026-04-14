@@ -1,14 +1,14 @@
 package com.example.demo.service.impl;
 
-import com.example.demo.constant.UserRegistrationConstants;
-import com.example.demo.dto.RegisterRequest;
-import com.example.demo.dto.TokenRequest;
-import com.example.demo.dto.TokenResponse;
+import com.example.demo.constant.auth.UserRegistrationConstants;
+import com.example.demo.dto.request.RegisterRequest;
+import com.example.demo.dto.request.TokenRequest;
+import com.example.demo.dto.response.TokenResponse;
 import com.example.demo.service.RemoteFederationAuthService;
-import com.example.demo.service.keycloak.KeycloakAdminApiClient;
-import com.example.demo.service.keycloak.KeycloakBrowserOAuthClient;
-import com.example.demo.service.keycloak.KeycloakPasswordGrantClient;
-import com.example.demo.service.strategy.registration.UserRegistrationCoordinator;
+import com.example.demo.client.keycloak.KeycloakAdminApiClient;
+import com.example.demo.client.keycloak.KeycloakBrowserOAuthClient;
+import com.example.demo.client.keycloak.KeycloakPasswordGrantClient;
+import com.example.demo.service.strategy.auth.UserRegistrationCoordinator;
 import com.example.demo.util.TokenRoleResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

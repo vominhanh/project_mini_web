@@ -1,0 +1,41 @@
+<section class="export-panel">
+    <div class="panel-header">
+
+    </div>
+
+    <div class="actions-card">
+        <div class="export-btn-group">
+            <button type="button" class="btn-download" (click)="download('pdf')"
+                [disabled]="!token || downloading !== null">
+                {{ downloading === 'pdf' ? 'Đang tải PDF...' : 'Tải báo cáo PDF' }}
+            </button>
+            <button type="button" class="btn-download excel" (click)="download('xlsx')"
+                [disabled]="!token || downloading !== null">
+                {{ downloading === 'xlsx' ? 'Đang tải Excel...' : 'Tải báo cáo Excel' }}
+            </button>
+        </div>
+    </div>
+
+    <div class="cols-card">
+        <h3>Chọn trường dữ liệu cần xuất</h3>
+        <p class="hint">Hệ thống sẽ reset về mặc định sau mỗi lần export.</p>
+
+        <div class="checkbox-grid">
+            @for (col of exportColumns; track col.key) {
+            <label class="checkbox-field">
+                <input type="checkbox" [checked]="selectedExportColumns.has(col.key)"
+                    (change)="toggleExportColumn(col.key)" />
+                <span class="box-label">{{ col.label }}</span>
+            </label>
+            }
+        </div>
+    </div>
+
+    <div class="preview-card">
+        <h3>Thông tin thống kê tổng quát</h3>
+        <ul class="stats-list">
+            <li><span>Vai trò hiện tại:</span> <strong>{{ authView?.effectiveRole || 'Unknown' }}</strong></li>
+            <li><span>Tổng số User trong hệ thống:</span> <strong>{{ users.length }}</strong></li>
+        </ul>
+    </div>
+</section>

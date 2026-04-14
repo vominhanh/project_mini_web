@@ -3,12 +3,11 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, inject, PLATFORM_ID } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { isPlatformBrowser } from '@angular/common';
-import { HomeComponent } from './home/home.component';
-import { ExportComponent } from './export/export.component';
+import { AdminComponent } from './admin/admin.component';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, FormsModule, HomeComponent, ExportComponent],
+  imports: [CommonModule, FormsModule, AdminComponent],
   standalone: true,
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
@@ -105,35 +104,20 @@ export class AppComponent {
       return;
     }
 
-    if (path === '/export' && !this.authView.canViewUsers) {
-      this.navigateTo('/home', true);
-      return;
+    if (path !== '/admin') {
+      this.navigateTo('/admin', true);
     }
-
-    if (path !== '/' && path !== '/home' && path !== '/export') {
-      this.navigateTo('/home', true);
-    }
-  }
-
-  isExportPage(): boolean {
-    if (!isPlatformBrowser(this.platformId)) {
-      return false;
-    }
-    return window.location.pathname === '/export';
-  }
-
-  goToExport(): void {
-    if (!this.isAuthenticated() || !this.authView.canViewUsers) {
-      return;
-    }
-    this.navigateTo('/export');
   }
 
   goToHome(): void {
+    this.goToAdmin();
+  }
+
+  goToAdmin(): void {
     if (!this.isAuthenticated()) {
       return;
     }
-    this.navigateTo('/home');
+    this.navigateTo('/admin');
   }
 
   private navigateTo(path: string, replace = false): void {
@@ -394,7 +378,7 @@ export class AppComponent {
     }
 
     this.loadView();
-    this.navigateTo('/home');
+    this.navigateTo('/admin');
   }
 
   private loadView(): void {
