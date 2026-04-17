@@ -4,7 +4,8 @@
         <div class="metric-card">
             <span class="label">{{ metric.label }}</span>
             <span class="value">{{ metric.value }}</span>
-            <span class="note" [class.positive]="metric.color === 'positive'" [class.negative]="metric.color === 'negative'">{{ metric.note }}</span>
+            <span class="note" [class.positive]="metric.color === 'positive'"
+                [class.negative]="metric.color === 'negative'">{{ metric.note }}</span>
         </div>
         }
     </div>
