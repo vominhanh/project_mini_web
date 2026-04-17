@@ -60,18 +60,16 @@
 
 .nav-item {
     text-align: left;
-    padding: 14px 30px;
+    padding: 14px 50px;
     border-radius: 8px;
     border: 1px solid transparent;
     background: transparent;
     color: #475569;
     font-size: 17px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
     border: 2px solid #e2e8f0;
-
-
 }
 
 .nav-item:hover {
@@ -83,7 +81,7 @@
 .nav-item.active {
     background: #2d83ca;
     border-color: #e2e8f0;
-    color: #e2e8f0;
+    color: white;
     font-weight: 700;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }

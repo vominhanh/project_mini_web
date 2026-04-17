@@ -43,7 +43,6 @@ export class AppComponent {
     homeDescription: 'Tai khoan user thong thuong. Giao dien don gian.'
   };
 
-  /** Da nhan /view xong (de chan /export truoc khi biet role). */
   private authViewLoaded = false;
 
   setMode(nextMode: 'login' | 'register'): void {

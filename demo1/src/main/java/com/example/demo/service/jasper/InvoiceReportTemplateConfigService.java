@@ -45,8 +45,7 @@ public class InvoiceReportTemplateConfigService {
     private static final String DATASET_TEMPLATE_METADATA = "Dataset3";
     private static final String REPORT_DATA_SOURCE_EXPR = "$P{REPORT_DATA_SOURCE}";
     private static final String TABLE_DATA_SOURCE_EXPR = "$P{TABLE_DATA_SOURCE}";
-    private static final String TEMPLATE_DATA_SOURCE_EXPR =
-            "$P{TEMPLATE_DATA_SOURCE}";
+    private static final String TEMPLATE_DATA_SOURCE_EXPR = "$P{TEMPLATE_DATA_SOURCE}";
     private static final Set<String> ALLOWED_EXPORT_COLUMNS = Set.of("id", "firstname", "lastname", "email", "username", "role");
 
     private volatile InvoiceReportTemplate currentTemplate;

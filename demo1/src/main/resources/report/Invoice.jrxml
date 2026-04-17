@@ -160,58 +160,6 @@ ORDER BY facepay_auth_log.auth_time DESC]]>
 			<property name="com.jaspersoft.studio.field.tree.path" value="facepay_auth_log"/>
 		</field>
 	</subDataset>
-	<subDataset name="Dataset1" uuid="565a6218-30f3-46f6-9794-fc5029bfb78a">
-		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
-		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="postgres"/>
-		<queryString language="SQL">
-			<![CDATA[select * from users]]>
-		</queryString>
-		<field name="id" class="java.lang.Long">
-			<property name="com.jaspersoft.studio.field.name" value="id"/>
-			<property name="com.jaspersoft.studio.field.label" value="id"/>
-			<property name="com.jaspersoft.studio.field.tree.path" value="users"/>
-		</field>
-		<field name="firstname" class="java.lang.String">
-			<property name="com.jaspersoft.studio.field.name" value="firstname"/>
-			<property name="com.jaspersoft.studio.field.label" value="firstname"/>
-			<property name="com.jaspersoft.studio.field.tree.path" value="users"/>
-		</field>
-		<field name="lastname" class="java.lang.String">
-			<property name="com.jaspersoft.studio.field.name" value="lastname"/>
-			<property name="com.jaspersoft.studio.field.label" value="lastname"/>
-			<property name="com.jaspersoft.studio.field.tree.path" value="users"/>
-		</field>
-		<field name="email" class="java.lang.String">
-			<property name="com.jaspersoft.studio.field.name" value="email"/>
-			<property name="com.jaspersoft.studio.field.label" value="email"/>
-			<property name="com.jaspersoft.studio.field.tree.path" value="users"/>
-		</field>
-		<field name="username" class="java.lang.String">
-			<property name="com.jaspersoft.studio.field.name" value="username"/>
-			<property name="com.jaspersoft.studio.field.label" value="username"/>
-			<property name="com.jaspersoft.studio.field.tree.path" value="users"/>
-		</field>
-		<field name="role" class="java.lang.String">
-			<property name="com.jaspersoft.studio.field.name" value="role"/>
-			<property name="com.jaspersoft.studio.field.label" value="role"/>
-			<property name="com.jaspersoft.studio.field.tree.path" value="users"/>
-		</field>
-		<group name="id">
-			<groupExpression><![CDATA[$F{id}]]></groupExpression>
-		</group>
-		<group name="firstname">
-			<groupExpression><![CDATA[$F{firstname}]]></groupExpression>
-		</group>
-		<group name="lastname">
-			<groupExpression><![CDATA[$F{lastname}]]></groupExpression>
-		</group>
-		<group name="email">
-			<groupExpression><![CDATA[$F{email}]]></groupExpression>
-		</group>
-		<group name="username">
-			<groupExpression><![CDATA[$F{username}]]></groupExpression>
-		</group>
-	</subDataset>
 	<subDataset name="Dataset2" uuid="98f75941-b58b-4879-b4ff-5204e2e9b6b4">
 		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="postgres"/>
@@ -349,7 +297,7 @@ from  users]]>
 	<detail>
 		<band height="111">
 			<componentElement>
-				<reportElement x="8" y="10" width="548" height="63" uuid="95d92b54-4367-4127-ae61-af4d4f263718">
+				<reportElement x="0" y="10" width="556" height="63" uuid="95d92b54-4367-4127-ae61-af4d4f263718">
 					<property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.VerticalRowLayout"/>
 					<property name="com.jaspersoft.studio.table.style.table_header" value="Table 1_TH"/>
 					<property name="com.jaspersoft.studio.table.style.column_header" value="Table 1_CH"/>
@@ -475,7 +423,9 @@ from  users]]>
 					<property name="com.jaspersoft.studio.table.style.detail" value="Table 2_TD"/>
 				</reportElement>
 				<jr:table xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
-					<datasetRun subDataset="Dataset3" uuid="e87de601-e1b7-4124-857c-fab2bb31c752"/>
+					<datasetRun subDataset="Dataset3" uuid="f5e32a20-4e62-4c97-824c-311e3397b5f2">
+						<dataSourceExpression><![CDATA[$P{TEMPLATE_DATA_SOURCE}]]></dataSourceExpression>
+					</datasetRun>
 					<jr:column width="120" uuid="a0188f84-6992-489a-a07b-849c60da0d9c">
 						<property name="com.jaspersoft.studio.components.table.model.column.name" value="Column1"/>
 						<jr:columnHeader style="Table 2_CH" height="30" rowSpan="1">

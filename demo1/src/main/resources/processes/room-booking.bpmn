@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.32.0">
+  <bpmn:process id="create_room_process" isExecutable="true" camunda:historyTimeToLive="30">
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="UserLane" name="User" />
+      <bpmn:lane id="SystemLane" name="System" />
+      <bpmn:lane id="AdminLane" name="Admin" />
+    </bpmn:laneSet>
+    <bpmn:startEvent id="StartEvent" name="Submit Room">
+      <bpmn:outgoing>f1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="validateData" name="Validate Data" camunda:delegateExpression="${validateData}">
+      <bpmn:incoming>f1</bpmn:incoming>
+      <bpmn:incoming>f15</bpmn:incoming>
+      <bpmn:outgoing>f2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="checkDuplicate" name="Check Duplicate" camunda:delegateExpression="${checkDuplicate}">
+      <bpmn:incoming>f2</bpmn:incoming>
+      <bpmn:outgoing>f3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="checkBusinessRule" name="Check Business Rule" camunda:delegateExpression="${checkBusinessRule}">
+      <bpmn:incoming>f3</bpmn:incoming>
+      <bpmn:outgoing>f4</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="adminApproval" name="Admin Approval" camunda:candidateGroups="admin">
+      <bpmn:incoming>f4</bpmn:incoming>
+      <bpmn:outgoing>f5</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:boundaryEvent id="timeout" attachedToRef="adminApproval">
+      <bpmn:outgoing>f10</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration>PT24H</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+    <bpmn:exclusiveGateway id="decisionGateway" name="Approved?">
+      <bpmn:incoming>f5</bpmn:incoming>
+      <bpmn:outgoing>f6</bpmn:outgoing>
+      <bpmn:outgoing>f7</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="auditLog" name="Audit Log - Approved" camunda:delegateExpression="${auditLog}">
+      <bpmn:incoming>f6</bpmn:incoming>
+      <bpmn:outgoing>f9</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="auditLogReject" name="Audit Log - Rejected" camunda:delegateExpression="${auditLog}">
+      <bpmn:incoming>f7</bpmn:incoming>
+      <bpmn:incoming>f10</bpmn:incoming>
+      <bpmn:outgoing>f8</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="updateRoom" name="Update Room Info" camunda:assignee="${roomOwner}">
+      <bpmn:incoming>f12</bpmn:incoming>
+      <bpmn:outgoing>f15</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="notifyReject" name="Send Rejection Email" camunda:delegateExpression="${sendRejectionEmail}">
+      <bpmn:incoming>f8</bpmn:incoming>
+      <bpmn:outgoing>f13</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="notifyApprove" name="Send Approval Email" camunda:delegateExpression="${sendConfirmEmail}">
+      <bpmn:incoming>f9</bpmn:incoming>
+      <bpmn:outgoing>f11</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="EndReject" name="Room Rejected">
+      <bpmn:incoming>f14</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="EndApprove" name="Room Created">
+      <bpmn:incoming>f11</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="loopGateway" name="Retry &#60; 4?" default="f14">
+      <bpmn:incoming>f13</bpmn:incoming>
+      <bpmn:outgoing>f12</bpmn:outgoing>
+      <bpmn:outgoing>f14</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="f1" sourceRef="StartEvent" targetRef="validateData" />
+    <bpmn:sequenceFlow id="f2" sourceRef="validateData" targetRef="checkDuplicate" />
+    <bpmn:sequenceFlow id="f3" sourceRef="checkDuplicate" targetRef="checkBusinessRule" />
+    <bpmn:sequenceFlow id="f4" sourceRef="checkBusinessRule" targetRef="adminApproval" />
+    <bpmn:sequenceFlow id="f5" sourceRef="adminApproval" targetRef="decisionGateway" />
+    <bpmn:sequenceFlow id="f6" sourceRef="decisionGateway" targetRef="auditLog">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approved == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="f7" sourceRef="decisionGateway" targetRef="auditLogReject">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approved == false}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="f8" sourceRef="auditLogReject" targetRef="notifyReject" />
+    <bpmn:sequenceFlow id="f9" sourceRef="auditLog" targetRef="notifyApprove" />
+    <bpmn:sequenceFlow id="f10" sourceRef="timeout" targetRef="auditLogReject" />
+    <bpmn:sequenceFlow id="f11" sourceRef="notifyApprove" targetRef="EndApprove" />
+    <bpmn:sequenceFlow id="f13" sourceRef="notifyReject" targetRef="loopGateway" />
+    <bpmn:sequenceFlow id="f12" sourceRef="loopGateway" targetRef="updateRoom">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${retryCount &lt; 4}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="f14" sourceRef="loopGateway" targetRef="EndReject" />
+    <bpmn:sequenceFlow id="f15" sourceRef="updateRoom" targetRef="validateData" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_1">
+    <bpmndi:BPMNPlane id="Plane_1" bpmnElement="create_room_process">
+      <bpmndi:BPMNShape bpmnElement="StartEvent">
+        <dc:Bounds x="170" y="150" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="154" y="190" width="68" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="validateData">
+        <dc:Bounds x="270" y="130" width="120" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="checkDuplicate">
+        <dc:Bounds x="450" y="130" width="120" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="checkBusinessRule">
+        <dc:Bounds x="630" y="130" width="120" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="adminApproval">
+        <dc:Bounds x="810" y="130" width="120" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="decisionGateway" isMarkerVisible="true">
+        <dc:Bounds x="1010" y="145" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1009" y="110" width="53" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="auditLog">
+        <dc:Bounds x="1150" y="50" width="120" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="auditLogReject">
+        <dc:Bounds x="1150" y="200" width="120" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="updateRoom">
+        <dc:Bounds x="630" y="320" width="120" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="notifyReject">
+        <dc:Bounds x="1330" y="200" width="120" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="notifyApprove">
+        <dc:Bounds x="1330" y="50" width="120" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="EndReject">
+        <dc:Bounds x="1632" y="222" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1612" y="265" width="77" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="EndApprove">
+        <dc:Bounds x="1520" y="72" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1503" y="115" width="72" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="loopGateway" isMarkerVisible="true">
+        <dc:Bounds x="1520" y="215" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1519" y="180" width="52" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="timeout">
+        <dc:Bounds x="912" y="200" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="825" y="245" width="70" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="f1">
+        <di:waypoint x="206" y="168" />
+        <di:waypoint x="270" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="f2">
+        <di:waypoint x="390" y="168" />
+        <di:waypoint x="450" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="f3">
+        <di:waypoint x="570" y="168" />
+        <di:waypoint x="630" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="f4">
+        <di:waypoint x="750" y="168" />
+        <di:waypoint x="810" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="f5">
+        <di:waypoint x="930" y="170" />
+        <di:waypoint x="1010" y="170" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="f6">
+        <di:waypoint x="1060" y="145" />
+        <di:waypoint x="1110" y="90" />
+        <di:waypoint x="1150" y="90" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1000" y="110" width="39" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="f7">
+        <di:waypoint x="1060" y="170" />
+        <di:waypoint x="1110" y="240" />
+        <di:waypoint x="1150" y="240" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="f8">
+        <di:waypoint x="1270" y="240" />
+        <di:waypoint x="1330" y="240" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="f9">
+        <di:waypoint x="1270" y="90" />
+        <di:waypoint x="1330" y="90" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="f10">
+        <di:waypoint x="930" y="236" />
+        <di:waypoint x="930" y="310" />
+        <di:waypoint x="1210" y="310" />
+        <di:waypoint x="1210" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="f11">
+        <di:waypoint x="1450" y="90" />
+        <di:waypoint x="1520" y="90" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="f13">
+        <di:waypoint x="1450" y="240" />
+        <di:waypoint x="1520" y="240" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="f12">
+        <di:waypoint x="1545" y="265" />
+        <di:waypoint x="1545" y="360" />
+        <di:waypoint x="750" y="360" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1400" y="320" width="72" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="f14">
+        <di:waypoint x="1570" y="240" />
+        <di:waypoint x="1632" y="240" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1510" y="295" width="50" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="f15">
+        <di:waypoint x="620" y="360" />
+        <di:waypoint x="330" y="360" />
+        <di:waypoint x="330" y="210" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

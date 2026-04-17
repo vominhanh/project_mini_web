@@ -75,7 +75,7 @@
             <app-admin-booking [users]="users" [authView]="authView"></app-admin-booking>
             }
             @if (activePanel === 'create_room') {
-            <app-admin-create-room></app-admin-create-room>
+            <app-admin-create-room [authView]="authView" [token]="token" [userInfo]="userInfo"></app-admin-create-room>
             }
             @if (activePanel === 'export') {
             <app-admin-export-view [users]="users" [authView]="authView" [token]="token"></app-admin-export-view>

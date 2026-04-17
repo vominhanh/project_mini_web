@@ -1,7 +1,7 @@
 package com.example.demo.service.jasper;
 
-import com.example.demo.dto.response.ReportUserRow;
 import com.example.demo.dto.response.RuntimeTemplate;
+import com.example.demo.dto.response.UserSummaryDto;
 import com.example.demo.service.RemoteFederationAuthService;
 import lombok.RequiredArgsConstructor;
 import net.sf.jasperreports.engine.DefaultJasperReportsContext;
@@ -98,26 +98,26 @@ public class InvoiceReportService {
         x.exportReport();
     }
 
-    private List<ReportUserRow> toReportRows(List<Map<String, Object>> users) {
+    private List<UserSummaryDto> toReportRows(List<Map<String, Object>> users) {
         if (users == null || users.isEmpty()) {
             return List.of();
         }
-        List<ReportUserRow> rows = new ArrayList<>(users.size());
+        List<UserSummaryDto> rows = new ArrayList<>(users.size());
         for (int i = 0; i < users.size(); i++) {
             rows.add(toReportRow(users.get(i), i));
         }
         return rows;
     }
 
-    private ReportUserRow toReportRow(Map<String, Object> user, int index) {
+    private UserSummaryDto toReportRow(Map<String, Object> user, int index) {
         String[] nameParts = resolveName(user);
-        return new ReportUserRow(
-                safeLong(firstNonBlank(user.get("id"), user.get("userId")), (long) index + 1),
-                nameParts[0],
-                nameParts[1],
-                firstNonBlank(user.get("email")),
-                firstNonBlank(user.get("username")),
-                normalizeExportRole(user.get("role")));
+        UserSummaryDto row = new UserSummaryDto();
+        row.setId(safeLong(firstNonBlank(user.get("id"), user.get("userId")), (long) index + 1));
+        row.setFirstname(nameParts[0]);
+        row.setLastname(nameParts[1]);
+        row.setEmail(firstNonBlank(user.get("email")));
+        row.setRole(normalizeExportRole(user.get("role")));
+        return row;
     }
 
     private String[] resolveName(Map<String, Object> user) {

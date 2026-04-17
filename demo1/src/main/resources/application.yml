@@ -1,4 +1,7 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
+
   application:
     name: demo1
 
@@ -7,12 +10,31 @@ spring:
     username: ${JASPER_DATASOURCE_USERNAME:postgres}
     password: ${JASPER_DATASOURCE_PASSWORD:123321}
     driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: ${KEYCLOAK_ISSUER_URI:http://127.0.0.1:8080/realms/master}
+
+  mail:
+    host: ${APP_MAIL_HOST:smtp.gmail.com}
+    port: ${APP_MAIL_PORT:587}
+    username: ${APP_MAIL_USERNAME:}
+    password: ${APP_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
 
 keycloak:
   auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL:http://127.0.0.1:8080}
@@ -46,3 +68,13 @@ app:
 
 server:
   port: ${SERVER_PORT:8082}
+
+camunda.bpm:
+  admin-user:
+    id: demo
+    password: demo
+  filter:
+    create: All tasks
+  database:
+    schema-update: true
+  history-time-to-live: P1D

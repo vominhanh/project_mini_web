@@ -17,8 +17,9 @@ public class KeycloakAdminUserRegistrationStrategy {
     public void createUser(String email, String password, String firstName, String lastName) {
         String fn = normalizeFirstName(firstName);
         String ln = normalizeLastName(lastName);
+        String username = buildUsername(fn, ln);
         String adminToken = keycloakAdminApiClient.obtainAdminAccessToken();
-        keycloakAdminApiClient.createPasswordUser(adminToken, email, password, fn, ln);
+        keycloakAdminApiClient.createPasswordUser(adminToken, email, username, password, fn, ln);
     }
 
     private static String normalizeFirstName(String firstName) {
@@ -36,5 +37,20 @@ public class KeycloakAdminUserRegistrationStrategy {
             return s;
         }
         return s.substring(0, max);
+    }
+
+    private static String buildUsername(String firstName, String lastName) {
+        String raw = (firstName + lastName).trim();
+        if (raw.isBlank()) {
+            return "user";
+        }
+        String ascii = raw
+                .replaceAll("\\s+", "")
+                .replaceAll("[^A-Za-z0-9._-]", "")
+                .toLowerCase();
+        if (ascii.isBlank()) {
+            return "user";
+        }
+        return truncate(ascii, 150);
     }
 }

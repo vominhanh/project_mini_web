@@ -156,11 +156,12 @@ public class KeycloakAdminApiClient {
     public void createPasswordUser(
             String adminAccessToken,
             String email,
+            String username,
             String password,
             String firstName,
             String lastName) {
         Map<String, Object> representation = new java.util.LinkedHashMap<>();
-        representation.put("username", email);
+        representation.put("username", username);
         representation.put("email", email);
         representation.put("firstName", firstName);
         representation.put("lastName", lastName);

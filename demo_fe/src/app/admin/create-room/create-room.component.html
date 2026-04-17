@@ -1,49 +1,170 @@
 <section class="create-room-panel">
     <div class="panel-header">
-        <h2>Tạo phòng mới</h2>
-        <p>Điền thông tin chi tiết để thêm phòng vào hệ thống.</p>
+        <h2>{{ isAdmin() ? 'Duyệt phòng theo workflow Camunda' : 'Tạo phòng và gửi duyệt' }}</h2>
+        <p>{{ isAdmin() ? 'Admin xem task chờ duyệt, phê duyệt hoặc từ chối.' : 'User tạo phòng mới hoặc cập nhật lại
+            phòng bị từ chối.' }}</p>
     </div>
 
-    <form class="room-form">
+    @if (message) {
+    <div class="alert success">{{ message }}</div>
+    }
+    @if (error) {
+    <div class="alert error">{{ error }}</div>
+    }
+
+    @if (!isAdmin()) {
+    <form class="room-form" (ngSubmit)="submit()">
         <div class="form-row">
             <div class="form-group">
                 <label>Tên phòng</label>
-                <input type="text" placeholder="VD: Phòng VIP 101" />
+                <input [(ngModel)]="form.name" name="name" type="text" placeholder="VD: Phòng VIP 101" />
             </div>
             <div class="form-group">
-                <label>Loại phòng</label>
-                <select>
-                    <option>Standard</option>
-                    <option>Deluxe</option>
-                    <option>Suite</option>
-                </select>
+                <label>Loại giường</label>
+                <input [(ngModel)]="form.bedType" name="bedType" type="text" placeholder="VD: King / Queen / Twin" />
             </div>
         </div>
-        
+
         <div class="form-row">
             <div class="form-group">
                 <label>Giá một đêm (VND)</label>
-                <input type="number" placeholder="VD: 500000" />
+                <input [(ngModel)]="form.price" name="price" type="number" placeholder="VD: 500000" />
             </div>
             <div class="form-group">
-                <label>Số người tối đa</label>
-                <input type="number" placeholder="VD: 2" />
+                <label>Sức chứa</label>
+                <input [(ngModel)]="form.capacity" name="capacity" type="number" placeholder="VD: 2" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Thành phố</label>
+                <input [(ngModel)]="form.city" name="city" type="text" />
+            </div>
+            <div class="form-group">
+                <label>Quận/Huyện</label>
+                <input [(ngModel)]="form.district" name="district" type="text" />
             </div>
         </div>
 
         <div class="form-group full-width">
-            <label>Tiện ích</label>
-            <input type="text" placeholder="VD: Wifi, Điều hòa, Bồn tắm" />
+            <label>Địa chỉ</label>
+            <input [(ngModel)]="form.address" name="address" type="text" />
         </div>
-
+        <div class="form-group full-width">
+            <label>Thumbnail (URL)</label>
+            <input [(ngModel)]="form.thumbnail" name="thumbnail" type="text" />
+        </div>
         <div class="form-group full-width">
             <label>Mô tả chi tiết</label>
-            <textarea rows="4" placeholder="Nhập mô tả về phòng..."></textarea>
+            <textarea [(ngModel)]="form.description" name="description" rows="4"></textarea>
+        </div>
+        <div class="form-group full-width">
+            <label>Số điện thoại</label>
+            <input [(ngModel)]="form.phoneNumber" name="phoneNumber" type="text" placeholder="VD: 0901234567" />
+        </div>
+        <div class="form-group full-width">
+            <label>Cập nhật task bị từ chối (nếu có)</label>
+            <select [(ngModel)]="selectedUpdateTaskId" (ngModelChange)="onUpdateTaskSelection($event)"
+                name="selectedUpdateTaskId">
+                <option value="">Tạo mới phòng</option>
+                @for (task of myUpdateTasks; track task.taskId) {
+                <option [value]="task.taskId">Task {{ task.taskName }} - {{ task.roomName }} (Lần sửa {{ task.retryCount
+                    }})</option>
+                }
+            </select>
         </div>
 
         <div class="form-actions">
-            <button type="button" class="btn-cancel">Hủy</button>
-            <button type="button" class="btn-submit">Lưu phòng</button>
+            <button type="submit" class="btn-submit" [disabled]="loading">
+                {{ selectedUpdateTaskId ? 'Cập nhật và gửi lại' : 'Gửi duyệt phòng' }}
+            </button>
         </div>
     </form>
+
+    <div class="table-wrap">
+        <h3>Phòng của tôi</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tên phòng</th>
+                    <th>Giá</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (room of myRooms; track room.id) {
+                <tr>
+                    <td>{{ room.id }}</td>
+                    <td>{{ room.name }}</td>
+                    <td>{{ room.price }}</td>
+                    <td><span class="status-chip" [class]="roomStatusClass(room.status)">{{ room.status }}</span></td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    }
+
+    @if (isAdmin()) {
+    <div class="table-wrap">
+        <h3>Task chờ admin duyệt</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Task</th>
+                    <th>Phòng</th>
+                    <th>Chủ phòng</th>
+                    <th>Lần sửa</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (task of adminTasks; track task.taskId) {
+                <tr>
+                    <td>{{ task.taskName }}</td>
+                    <td>{{ task.roomName }}</td>
+                    <td>{{ ((task.user?.firstname || '') + ' ' + (task.user?.lastname || '')).trim() || task.user?.email
+                        }}</td>
+                    <td>{{ task.retryCount }}</td>
+                    <td class="actions">
+                        <button type="button" class="btn-approve" (click)="approve(task.taskId, true)"
+                            [disabled]="loading">Duyệt</button>
+                        <button type="button" class="btn-reject" (click)="approve(task.taskId, false)"
+                            [disabled]="loading">Từ chối</button>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="table-wrap">
+        <h3>Tất cả phòng trong hệ thống</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tên phòng</th>
+                    <th>Chủ phòng</th>
+                    <th>Giá</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (room of adminRooms; track room.id) {
+                <tr>
+                    <td>{{ room.id }}</td>
+                    <td>{{ room.name }}</td>
+                    <td>{{ ((room.user?.firstname || '') + ' ' + (room.user?.lastname || '')).trim() || room.user?.email
+                        }}</td>
+                    <td>{{ room.price }}</td>
+                    <td><span class="status-chip" [class]="roomStatusClass(room.status)">{{ room.status }}</span></td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    }
 </section>
