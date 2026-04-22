@@ -1,6 +1,7 @@
 package com.example.demo.delegate;
 
-import com.example.demo.service.WorkflowEmailService;
+import com.example.demo.dto.notification.WorkflowEmailCommand;
+import com.example.demo.service.work_flow.WorkflowEventPublisher;
 import org.camunda.bpm.engine.delegate.DelegateExecution;
 import org.camunda.bpm.engine.delegate.JavaDelegate;
 import org.slf4j.Logger;
@@ -10,10 +11,10 @@ import org.springframework.stereotype.Component;
 @Component("sendConfirmEmail")
 public class SendConfirmEmailDelegate implements JavaDelegate {
     private static final Logger log = LoggerFactory.getLogger(SendConfirmEmailDelegate.class);
-    private final WorkflowEmailService workflowEmailService;
+    private final WorkflowEventPublisher workflowEventPublisher;
 
-    public SendConfirmEmailDelegate(WorkflowEmailService workflowEmailService) {
-        this.workflowEmailService = workflowEmailService;
+    public SendConfirmEmailDelegate(WorkflowEventPublisher workflowEventPublisher) {
+        this.workflowEventPublisher = workflowEventPublisher;
     }
 
     @Override
@@ -26,11 +27,11 @@ public class SendConfirmEmailDelegate implements JavaDelegate {
             return;
         }
 
-        workflowEmailService.sendEmail(
-                ownerEmail,
-                "[Room Booking] Phong da duoc phe duyet",
-                "Xin chao,\n\nPhong '" + roomName + "' cua ban da duoc phe duyet.\nBan co the su dung phong ngay bay gio.\n\nCam on."
-        );
-        log.info("Approved email sent: to={}, room={}", ownerEmail, roomName);
+        WorkflowEmailCommand command = new WorkflowEmailCommand();
+        command.setToEmail(ownerEmail);
+        command.setSubject("[Room Booking] Phong da duoc phe duyet");
+        command.setBody("Xin chao,\n\nPhong '" + roomName + "' cua ban da duoc phe duyet.\nBan co the su dung phong ngay bay gio.\n\nCam on.");
+        workflowEventPublisher.publishEmail(command);
+        log.info("Approved email event published: to={}, room={}", ownerEmail, roomName);
     }
 }

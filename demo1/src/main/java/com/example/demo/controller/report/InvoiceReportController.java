@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -54,6 +55,20 @@ public class InvoiceReportController {
     public InvoiceReportConfigResponse getConfig() {
         var cfg = templateConfigService.getCurrentTemplate();
         return new InvoiceReportConfigResponse(cfg.jrxmlName(), cfg.logoName(), cfg.updatedAt().toString());
+    }
+
+    @GetMapping("/preview")
+    public ResponseEntity<Map<String, Object>> previewReport(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestParam(name = "columns", required = false) List<String> columns) {
+        String accessToken = BearerTokenExtractor.fromAuthorizationHeader(authorization);
+        var preview = invoiceReportService.preview(columns, accessToken);
+        return ResponseEntity.ok(Map.of(
+                "userColumns", preview.userColumns(),
+                "roomColumns", preview.roomColumns(),
+                "userRows", preview.userRows(),
+                "roomRows", preview.roomRows()
+        ));
     }
 
     public record InvoiceReportConfigResponse(

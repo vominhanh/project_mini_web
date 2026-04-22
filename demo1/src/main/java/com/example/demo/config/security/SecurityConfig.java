@@ -41,8 +41,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
                                 "/api/v1/auth/**",
-                        "/camunda/**",
-                        "/engine-rest/**",
+                                "/camunda/**",
+                                "/engine-rest/**",
+                                "/ws/**",
+                                "/internal/workflow/**",
                                 "/error"
                         ).permitAll()
                         .requestMatchers("/api/rooms/admin/**").hasRole("ADMIN")
