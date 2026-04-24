@@ -38,6 +38,7 @@ public class NotificationUserToAdminUpdateDelegate implements JavaDelegate {
         event.setMessage("Nguoi dung da cap nhat phong, can admin duyet lai");
         event.setCreatedAt(LocalDateTime.now());
         workflowEventPublisher.publishNotification(event);
+        log.info(event.toString());
 
         log.info("User-to-admin update notification event published: roomId={}, roomName={}, ownerEmail={}, retryCount={}",
                 roomId, roomName, ownerEmail, retryCount);

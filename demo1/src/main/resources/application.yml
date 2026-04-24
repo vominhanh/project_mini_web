@@ -36,11 +36,23 @@ spring:
             enable: true
             required: true
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: ${APP_ROOM_CACHE_TTL:60s}
+
 keycloak:
   auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL:http://127.0.0.1:8080}
   realm: ${KEYCLOAK_REALM:master}
 
 app:
+  kafka-gateway:
+    base-url: ${APP_KAFKA_GATEWAY_BASE_URL:http://localhost:8083}
   auth:
     google:
       redirect-uri: ${APP_AUTH_GOOGLE_REDIRECT_URI:http://localhost:4200/}
@@ -52,7 +64,7 @@ app:
       auth-uri: ${KEYCLOAK_BROWSER_AUTH_URI:http://127.0.0.1:8080/realms/master/protocol/openid-connect/auth}
 
     remote-federation:
-      client-id: demo-fe
+      client-id: ${KEYCLOAK_REMOTE_CLIENT_ID:demo-fe}
       client-secret: ${KEYCLOAK_REMOTE_CLIENT_SECRET:${KEYCLOAK_ADMIN_CLIENT_SECRET:CR8VXD1nx7UyMHwoLUZ3X2s80bCpcJ4O}}
       token-uri: ${KEYCLOAK_REMOTE_TOKEN_URI:http://127.0.0.1:8080/realms/master/protocol/openid-connect/token}
     admin:

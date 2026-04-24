@@ -1,6 +1,7 @@
-package com.example.demo.service;
+package com.example.demo.service.work_flow;
 
 import com.example.demo.dto.request.RoomSubmissionRequest;
+import com.example.demo.dto.notification.WorkflowNotificationEvent;
 import com.example.demo.dto.response.RoomResponseDto;
 import com.example.demo.dto.response.RoomTaskDto;
 import com.example.demo.dto.response.UserSummaryDto;
@@ -12,6 +13,8 @@ import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.TaskService;
 import org.camunda.bpm.engine.task.Task;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
@@ -28,18 +31,22 @@ public class RoomWorkflowService {
     private final UserRepository userRepository;
     private final RuntimeService runtimeService;
     private final TaskService taskService;
+    private final WorkflowEventPublisher workflowEventPublisher;
     private final String adminUserId;
 
     public RoomWorkflowService(RoomRepository roomRepository, UserRepository userRepository,
-                               RuntimeService runtimeService, TaskService taskService,
-                               @Value("${camunda.bpm.admin-user.id:demo}") String adminUserId) {
+            RuntimeService runtimeService, TaskService taskService,
+            WorkflowEventPublisher workflowEventPublisher,
+            @Value("${camunda.bpm.admin-user.id:demo}") String adminUserId) {
         this.roomRepository = roomRepository;
         this.userRepository = userRepository;
         this.runtimeService = runtimeService;
         this.taskService = taskService;
+        this.workflowEventPublisher = workflowEventPublisher;
         this.adminUserId = adminUserId;
     }
 
+    @CacheEvict(cacheNames = { "rooms_admin_list", "rooms_user_list" }, allEntries = true)
     public String submitRoom(RoomSubmissionRequest request, Jwt jwt) {
         String ownerEmail = extractEmail(jwt);
         User owner = upsertOwner(jwt, ownerEmail, request.getPhoneNumber());
@@ -65,15 +72,17 @@ public class RoomWorkflowService {
         return "Da gui yeu cau tao phong. Vui long cho admin duyet.";
     }
 
+    @Cacheable(cacheNames = "rooms_user_list", key = "#ownerEmail")
     public List<RoomResponseDto> findMyRooms(String ownerEmail) {
-        return roomRepository.findByOwnerEmailOrderByCreatedAtDesc(ownerEmail)
+        return roomRepository.findTop10ByOwnerEmailOrderByCreatedAtDesc(ownerEmail)
                 .stream()
                 .map(this::toRoomResponse)
                 .toList();
     }
 
+    @Cacheable(cacheNames = "rooms_admin_list", key = "'all'")
     public List<RoomResponseDto> findAllRooms() {
-        return roomRepository.findAll().stream().map(this::toRoomResponse).toList();
+        return roomRepository.findTop10ByOrderByCreatedAtDesc().stream().map(this::toRoomResponse).toList();
     }
 
     public List<RoomTaskDto> getAdminApprovalTasks() {
@@ -103,10 +112,12 @@ public class RoomWorkflowService {
                 .toList();
     }
 
+    @CacheEvict(cacheNames = { "rooms_admin_list", "rooms_user_list" }, allEntries = true)
     public void decideByAdmin(String taskId, boolean approved) {
         Task task = requireTask(taskId);
         Long roomId = readLongVariable(task.getProcessInstanceId(), "roomId");
-        Room room = roomRepository.findById(roomId).orElseThrow(() -> new IllegalArgumentException("Khong tim thay room"));
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay room"));
         room.setStatus(approved ? "APPROVED" : "REJECTED");
         room.setIsAvailable(approved);
         room.setUpdatedAt(LocalDateTime.now());
@@ -117,6 +128,7 @@ public class RoomWorkflowService {
         taskService.complete(task.getId(), variables);
     }
 
+    @CacheEvict(cacheNames = { "rooms_admin_list", "rooms_user_list" }, allEntries = true)
     public void resubmitByOwner(String taskId, String ownerEmail, RoomSubmissionRequest request) {
         Task task = requireTask(taskId);
         if (!ownerEmail.equals(task.getAssignee())) {
@@ -124,7 +136,8 @@ public class RoomWorkflowService {
         }
 
         Long roomId = readLongVariable(task.getProcessInstanceId(), "roomId");
-        Room room = roomRepository.findById(roomId).orElseThrow(() -> new IllegalArgumentException("Khong tim thay room"));
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay room"));
         User owner = room.getOwner();
         if (owner != null) {
             owner.setPhoneNumber(normalizePhone(request.getPhoneNumber()));
@@ -139,6 +152,17 @@ public class RoomWorkflowService {
 
         Integer retryCount = (Integer) runtimeService.getVariable(task.getProcessInstanceId(), "retryCount");
         int nextRetryCount = retryCount == null ? 1 : retryCount + 1;
+
+        WorkflowNotificationEvent updateEvent = new WorkflowNotificationEvent();
+        updateEvent.setEventType("USER_TO_ADMIN_UPDATE");
+        updateEvent.setRoomId(room.getId());
+        updateEvent.setRoomName(room.getName());
+        updateEvent.setOwnerEmail(ownerEmail);
+        updateEvent.setRetryCount(nextRetryCount);
+        updateEvent.setStatus("PENDING_REVIEW_AFTER_UPDATE");
+        updateEvent.setMessage("Nguoi dung da cap nhat phong, can admin duyet lai (lan " + nextRetryCount + ")");
+        updateEvent.setCreatedAt(LocalDateTime.now());
+        workflowEventPublisher.publishNotification(updateEvent);
 
         Map<String, Object> variables = new HashMap<>();
         variables.put("roomName", room.getName());
@@ -190,7 +214,6 @@ public class RoomWorkflowService {
     private RoomResponseDto toRoomResponse(Room room) {
         RoomResponseDto dto = new RoomResponseDto();
         dto.setId(room.getId());
-        dto.setUser(toUserSummary(room.getOwner()));
         dto.setName(room.getName());
         dto.setDescription(room.getDescription());
         dto.setPrice(room.getPrice());

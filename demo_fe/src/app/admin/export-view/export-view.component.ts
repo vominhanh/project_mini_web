@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, Input, inject } from '@angular/core';
 
 type ExportColumnKey = 'id' | 'firstname' | 'lastname' | 'email' | 'username' | 'role';
+type TemplateColumnKey = 'id' | 'name' | 'price' | 'capacity' | 'city';
 
 @Component({
   selector: 'app-admin-export-view',
@@ -14,6 +15,7 @@ type ExportColumnKey = 'id' | 'firstname' | 'lastname' | 'email' | 'username' | 
 export class ExportViewComponent {
   private readonly http = inject(HttpClient);
   private readonly defaultExportColumns: ExportColumnKey[] = ['id', 'firstname', 'lastname', 'email', 'username', 'role'];
+  private readonly defaultTemplateColumns: TemplateColumnKey[] = ['id', 'name', 'price', 'capacity', 'city'];
 
   @Input() authView: any;
   @Input() users: any[] = [];
@@ -21,6 +23,16 @@ export class ExportViewComponent {
   @Input() backendBaseUrl = 'http://localhost:8082';
 
   downloading: 'pdf' | 'xlsx' | null = null;
+  previewLoading = false;
+  showPreviewModal = false;
+  pendingFormat: 'pdf' | 'xlsx' | null = null;
+  previewData: {
+    userColumns: string[];
+    roomColumns: string[];
+    userRows: Record<string, any>[];
+    roomRows: Record<string, any>[];
+  } = { userColumns: [], roomColumns: [], userRows: [], roomRows: [] };
+
   exportColumns: { key: ExportColumnKey; label: string }[] = [
     { key: 'id', label: 'ID' },
     { key: 'firstname', label: 'First name' },
@@ -29,17 +41,38 @@ export class ExportViewComponent {
     { key: 'username', label: 'Username' },
     { key: 'role', label: 'Role' }
   ];
+  templateColumns: { key: TemplateColumnKey; label: string }[] = [
+    { key: 'id', label: 'Room ID' },
+    { key: 'name', label: 'Tên phòng' },
+    { key: 'price', label: 'Giá' },
+    { key: 'capacity', label: 'Sức chứa' },
+    { key: 'city', label: 'Thành phố' }
+  ];
   selectedExportColumns = new Set<ExportColumnKey>(this.defaultExportColumns);
+  selectedTemplateColumns = new Set<TemplateColumnKey>(this.defaultTemplateColumns);
 
   private authHeaders(): HttpHeaders {
     return new HttpHeaders().set('Authorization', `Bearer ${this.token}`);
   }
 
-  private selectedColumnsForRequest(): ExportColumnKey[] {
+  private selectedUserColumnsForRequest(): ExportColumnKey[] {
     const chosen = this.exportColumns
       .map((c) => c.key)
       .filter((key) => this.selectedExportColumns.has(key));
     return chosen.length > 0 ? chosen : [...this.defaultExportColumns];
+  }
+
+  private selectedTemplateColumnsForRequest(): TemplateColumnKey[] {
+    const chosen = this.templateColumns
+      .map((c) => c.key)
+      .filter((key) => this.selectedTemplateColumns.has(key));
+    return chosen.length > 0 ? chosen : [...this.defaultTemplateColumns];
+  }
+
+  private selectedColumnsForRequest(): string[] {
+    const userCols = this.selectedUserColumnsForRequest().map((key) => `user:${key}`);
+    const roomCols = this.selectedTemplateColumnsForRequest().map((key) => `room:${key}`);
+    return [...userCols, ...roomCols];
   }
 
   private buildExportUrl(format: 'pdf' | 'xlsx'): string {
@@ -54,6 +87,7 @@ export class ExportViewComponent {
 
   private resetExportColumnsToDefault(): void {
     this.selectedExportColumns = new Set<ExportColumnKey>(this.defaultExportColumns);
+    this.selectedTemplateColumns = new Set<TemplateColumnKey>(this.defaultTemplateColumns);
   }
 
   toggleExportColumn(key: ExportColumnKey): void {
@@ -65,6 +99,17 @@ export class ExportViewComponent {
     }
     this.selectedExportColumns.add(key);
     this.selectedExportColumns = new Set(this.selectedExportColumns);
+  }
+
+  toggleTemplateColumn(key: TemplateColumnKey): void {
+    if (this.selectedTemplateColumns.has(key)) {
+      if (this.selectedTemplateColumns.size === 1) return;
+      this.selectedTemplateColumns.delete(key);
+      this.selectedTemplateColumns = new Set(this.selectedTemplateColumns);
+      return;
+    }
+    this.selectedTemplateColumns.add(key);
+    this.selectedTemplateColumns = new Set(this.selectedTemplateColumns);
   }
 
   private saveBlob(blob: Blob, filename: string): void {
@@ -85,8 +130,46 @@ export class ExportViewComponent {
     return fallback;
   }
 
+  private buildPreviewUrl(): string {
+    const columns = this.selectedColumnsForRequest();
+    const params = new URLSearchParams();
+    for (const col of columns) {
+      params.append('columns', col);
+    }
+    return `${this.backendBaseUrl}/api/reports/invoice/preview?${params.toString()}`;
+  }
+
   download(format: 'pdf' | 'xlsx'): void {
-    if (!this.token || this.downloading) return;
+    if (!this.token || this.downloading || this.previewLoading) return;
+    this.previewLoading = true;
+    this.pendingFormat = format;
+    this.http.get<any>(this.buildPreviewUrl(), {
+      headers: this.authHeaders()
+    }).subscribe({
+      next: (res) => {
+        this.previewData = {
+          userColumns: Array.isArray(res?.userColumns) ? res.userColumns : [],
+          roomColumns: Array.isArray(res?.roomColumns) ? res.roomColumns : [],
+          userRows: Array.isArray(res?.userRows) ? res.userRows : [],
+          roomRows: Array.isArray(res?.roomRows) ? res.roomRows : []
+        };
+        this.showPreviewModal = true;
+      },
+      error: (err) => {
+        const msg = err?.status === 403 ? 'Ban khong co quyen admin.' : err?.message ?? 'Loi xem truoc du lieu';
+        alert(`Lay du lieu xem truoc that bai: ${msg}`);
+      },
+      complete: () => {
+        this.previewLoading = false;
+      }
+    });
+  }
+
+  confirmExport(): void {
+    const format = this.pendingFormat;
+    if (!format || !this.token || this.downloading) {
+      return;
+    }
     this.downloading = format;
     const fallback = `facepay-auth-log-${new Date().toISOString().slice(0, 10)}.${format}`;
 
@@ -111,8 +194,15 @@ export class ExportViewComponent {
       },
       complete: () => {
         this.downloading = null;
+        this.pendingFormat = null;
+        this.showPreviewModal = false;
         this.resetExportColumnsToDefault();
       }
     });
+  }
+
+  cancelPreview(): void {
+    this.showPreviewModal = false;
+    this.pendingFormat = null;
   }
 }

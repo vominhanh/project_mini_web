@@ -1,7 +1,7 @@
 package com.example.demo.service.jasper;
 
 import com.example.demo.dto.response.RuntimeTemplate;
-import com.example.demo.entity.InvoiceReportTemplate;
+import com.example.demo.repository.InvoiceReportTemplateRepository.StoredInvoiceTemplate;
 import jakarta.annotation.PostConstruct;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperCompileManager;
@@ -43,16 +43,18 @@ public class InvoiceReportTemplateConfigService {
     private static final String DEFAULT_LOGO_CLASSPATH = "report/Eximbank_Logo.png";
     private static final String JR_DATA_SOURCE_CLASS = "net.sf.jasperreports.engine.JRDataSource";
     private static final String DATASET_TEMPLATE_METADATA = "Dataset3";
+    private static final String DATASET_MAIN_TABLE = "Dataset2";
     private static final String REPORT_DATA_SOURCE_EXPR = "$P{REPORT_DATA_SOURCE}";
     private static final String TABLE_DATA_SOURCE_EXPR = "$P{TABLE_DATA_SOURCE}";
     private static final String TEMPLATE_DATA_SOURCE_EXPR = "$P{TEMPLATE_DATA_SOURCE}";
-    private static final Set<String> ALLOWED_EXPORT_COLUMNS = Set.of("id", "firstname", "lastname", "email", "username", "role");
+    private static final Set<String> ALLOWED_MAIN_COLUMNS = Set.of("id", "firstname", "lastname", "email", "username", "role");
+    private static final Set<String> ALLOWED_TEMPLATE_COLUMNS = Set.of("id", "name", "price", "capacity", "city");
 
-    private volatile InvoiceReportTemplate currentTemplate;
+    private volatile StoredInvoiceTemplate currentTemplate;
 
     @PostConstruct
     void init() throws IOException {
-        currentTemplate = new InvoiceReportTemplate(
+        currentTemplate = new StoredInvoiceTemplate(
                 filenameFromPath(DEFAULT_TEMPLATE_CLASSPATH),
                 readClasspathFile(DEFAULT_TEMPLATE_CLASSPATH),
                 filenameFromPath(DEFAULT_LOGO_CLASSPATH),
@@ -60,7 +62,7 @@ public class InvoiceReportTemplateConfigService {
                 Instant.now());
     }
 
-    public InvoiceReportTemplate getCurrentTemplate() {
+    public StoredInvoiceTemplate getCurrentTemplate() {
         if (currentTemplate == null) {
             throw new IllegalStateException("Khong tim thay report template mac dinh.");
         }
@@ -68,7 +70,7 @@ public class InvoiceReportTemplateConfigService {
     }
 
     public RuntimeTemplate compileCurrentTemplate(List<String> selectedColumns) throws JRException, IOException {
-        InvoiceReportTemplate current = getCurrentTemplate();
+        StoredInvoiceTemplate current = getCurrentTemplate();
         byte[] effectiveJrxml = filterJrxmlColumns(current.jrxmlContent(), selectedColumns);
         effectiveJrxml = normalizeForBeanDataSource(effectiveJrxml);
         effectiveJrxml = ensureTemplateDataSourceParameterFallback(effectiveJrxml);
@@ -91,8 +93,8 @@ public class InvoiceReportTemplateConfigService {
     }
 
     private static byte[] filterJrxmlColumns(byte[] jrxmlContent, List<String> selectedColumns) throws IOException {
-        Set<String> chosen = normalizeSelectedColumns(selectedColumns);
-        if (chosen.isEmpty() || chosen.size() == ALLOWED_EXPORT_COLUMNS.size()) {
+        ColumnSelection selection = normalizeSelectedColumns(selectedColumns);
+        if (selection.keepAllMain() && selection.keepAllTemplate()) {
             return jrxmlContent;
         }
 
@@ -113,16 +115,23 @@ public class InvoiceReportTemplateConfigService {
                 if (columns.isEmpty()) {
                     continue;
                 }
+                String datasetName = resolveTableDatasetName(table);
+                Set<String> allowedColumns = DATASET_TEMPLATE_METADATA.equals(datasetName)
+                        ? ALLOWED_TEMPLATE_COLUMNS
+                        : ALLOWED_MAIN_COLUMNS;
+                Set<String> chosenColumns = DATASET_TEMPLATE_METADATA.equals(datasetName)
+                        ? selection.templateColumns()
+                        : selection.mainColumns();
 
                 List<Element> kept = new java.util.ArrayList<>();
                 int validColumnsFound = 0;
                 int validColumnsTotalWidth = 0;
                 for (Element col : columns) {
                     String columnKey = extractColumnKey(col);
-                    if (ALLOWED_EXPORT_COLUMNS.contains(columnKey)) {
+                    if (allowedColumns.contains(columnKey)) {
                         validColumnsFound++;
                         validColumnsTotalWidth += parseWidth(col.getAttribute("width"));
-                        if (chosen.contains(columnKey)) {
+                        if (chosenColumns.isEmpty() || chosenColumns.contains(columnKey)) {
                             kept.add(col);
                         }
                     }
@@ -133,7 +142,7 @@ public class InvoiceReportTemplateConfigService {
                 }
 
                 for (Element col : columns) {
-                    if (!kept.contains(col) && ALLOWED_EXPORT_COLUMNS.contains(extractColumnKey(col))) {
+                    if (!kept.contains(col) && allowedColumns.contains(extractColumnKey(col))) {
                         table.removeChild(col);
                     }
                 }
@@ -333,6 +342,7 @@ public class InvoiceReportTemplateConfigService {
         }
 
         Element band = bands.getFirst();
+        int mainTableTotalWidth = resolveMainTableTotalWidth(root);
         List<Element> componentElements = childElementsByLocalName(band, "componentElement");
         if (componentElements.size() < 2) {
             return;
@@ -353,27 +363,112 @@ public class InvoiceReportTemplateConfigService {
             }
             reportElement.setAttribute("positionType", "Float");
             reportElement.setAttribute("y", "0");
+            int boostedWidth = mainTableTotalWidth > 0 ? mainTableTotalWidth + 120 : 0;
+            if (boostedWidth > 0) {
+                reportElement.setAttribute("width", String.valueOf(boostedWidth));
+            }
+
+            Element table = findFirstByLocalName(component, "table");
+            if (table == null) {
+                continue;
+            }
+            List<Element> columns = childElementsByLocalName(table, "column");
+            if (columns.isEmpty()) {
+                continue;
+            }
+            int currentWidth = columns.stream().mapToInt(c -> parseWidth(c.getAttribute("width"))).sum();
+            rebalanceColumnWidths(columns, boostedWidth > 0 ? boostedWidth : currentWidth);
         }
     }
 
-    private static Set<String> normalizeSelectedColumns(List<String> selectedColumns) {
-        if (selectedColumns == null || selectedColumns.isEmpty()) {
-            return Set.of();
+    private static int resolveMainTableTotalWidth(Element root) {
+        for (Element table : descendantsByLocalName(root, "table")) {
+            String datasetName = resolveTableDatasetName(table);
+            if (!DATASET_MAIN_TABLE.equals(datasetName)) {
+                continue;
+            }
+            List<Element> columns = childElementsByLocalName(table, "column");
+            if (columns.isEmpty()) {
+                continue;
+            }
+            return columns.stream().mapToInt(c -> parseWidth(c.getAttribute("width"))).sum();
         }
-        Set<String> normalized = new LinkedHashSet<>();
+        return 0;
+    }
+
+    private static String resolveTableDatasetName(Element tableElement) {
+        Node parent = tableElement.getParentNode();
+        while (parent != null && parent.getNodeType() == Node.ELEMENT_NODE) {
+            Element parentElement = (Element) parent;
+            if (matchesLocalName(parentElement, "componentElement")) {
+                Element datasetRun = findFirstByLocalName(parentElement, "datasetRun");
+                if (datasetRun != null) {
+                    String subDataset = datasetRun.getAttribute("subDataset");
+                    if (subDataset != null && !subDataset.isBlank()) {
+                        return subDataset.trim();
+                    }
+                }
+            }
+            parent = parent.getParentNode();
+        }
+        return "";
+    }
+
+    private static ColumnSelection normalizeSelectedColumns(List<String> selectedColumns) {
+        if (selectedColumns == null || selectedColumns.isEmpty()) {
+            return ColumnSelection.keepAll();
+        }
+        Set<String> main = new LinkedHashSet<>();
+        Set<String> template = new LinkedHashSet<>();
         for (String c : selectedColumns) {
             if (c == null || c.isBlank()) {
                 continue;
             }
             String[] tokens = c.split(",");
             for (String token : tokens) {
-                String key = token == null ? "" : token.trim().toLowerCase(Locale.ROOT);
-                if (ALLOWED_EXPORT_COLUMNS.contains(key)) {
-                    normalized.add(key);
+                String raw = token == null ? "" : token.trim().toLowerCase(Locale.ROOT);
+                if (raw.isBlank()) {
+                    continue;
+                }
+
+                if (raw.startsWith("room:") || raw.startsWith("template:")) {
+                    String key = raw.substring(raw.indexOf(':') + 1).trim();
+                    if (ALLOWED_TEMPLATE_COLUMNS.contains(key)) {
+                        template.add(key);
+                    }
+                    continue;
+                }
+
+                if (raw.startsWith("user:") || raw.startsWith("table:")) {
+                    String key = raw.substring(raw.indexOf(':') + 1).trim();
+                    if (ALLOWED_MAIN_COLUMNS.contains(key)) {
+                        main.add(key);
+                    }
+                    continue;
+                }
+
+                if (ALLOWED_MAIN_COLUMNS.contains(raw)) {
+                    main.add(raw);
+                } else if (ALLOWED_TEMPLATE_COLUMNS.contains(raw)) {
+                    template.add(raw);
                 }
             }
         }
-        return normalized;
+        return new ColumnSelection(main, template);
+    }
+
+    private record ColumnSelection(Set<String> mainColumns, Set<String> templateColumns) {
+        static ColumnSelection keepAll() {
+            return new ColumnSelection(Set.of(), Set.of());
+        }
+
+        boolean keepAllMain() {
+            return mainColumns == null || mainColumns.isEmpty();
+        }
+
+        boolean keepAllTemplate() {
+            return templateColumns == null || templateColumns.isEmpty();
+        }
     }
 
     private static String extractColumnKey(Element columnElement) {

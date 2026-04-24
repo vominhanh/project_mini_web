@@ -38,6 +38,7 @@
                 <strong>{{ userInfo?.currentUser?.name || userInfo?.currentUser?.username || 'User' }}</strong>
                 <span>{{ authView.effectiveRole }}</span>
             </div>
+
             <button class="logout-btn" (click)="onLogout()">Đăng xuất</button>
         </div>
     </aside>
@@ -47,7 +48,52 @@
             <div class="header-search">
                 <input type="text" placeholder="Search anything..." />
             </div>
+
             <div class="header-actions">
+                <div class="notification-bell-container" (click)="$event.stopPropagation()">
+                    <button class="notification-bell" (click)="toggleNotificationPanel($event)"
+                        [class.has-unread]="unreadNotificationCount > 0" title="Thông báo">
+                        🔔
+                    </button>
+                    @if (unreadNotificationCount > 0) {
+                    <span class="unread-badge">{{ unreadNotificationCount }}</span>
+                    }
+                    @if (notificationPanelOpen) {
+                    <div class="notification-panel">
+                        <div class="notification-header">
+                            <strong>Thông báo</strong>
+                            <button class="close-btn" (click)="notificationPanelOpen = false">✕</button>
+                        </div>
+                        <div class="notification-list">
+                            @if (notifications.length === 0) {
+                            <div class="empty-state">Chưa có thông báo</div>
+                            } @else {
+                            @for (notif of notifications; track notif.id ?? notif.createdAt) {
+                            <div class="notification-item" [class]="(notif.eventType || '').toLowerCase()"
+                                (click)="openNotification(notif)">
+                                <div class="notif-status-icon">
+                                    @if (notif.approved === true) {
+                                    ✓
+                                    } @else if (notif.eventType === 'REJECTED_FINAL') {
+                                    ✗
+                                    } @else {
+                                    !
+                                    }
+                                </div>
+                                <div class="notif-content">
+                                    <div class="notif-title">{{ notificationTitle(notif) }}</div>
+                                    <div class="notif-meta">{{ notificationMeta(notif) }}</div>
+                                    <div class="notif-message">{{ notif.message }}</div>
+                                    <div class="notif-time">{{ notif.createdAt | date: 'HH:mm dd/MM' }}</div>
+                                </div>
+                            </div>
+                            }
+                            }
+                        </div>
+                    </div>
+                    }
+                </div>
+
                 <div class="header-dropdown-container" (click)="$event.stopPropagation()">
                     <button class="header-profile" (click)="toggleHeaderMenu()">
                         {{ (userInfo?.currentUser?.name || 'U').charAt(0).toUpperCase() }}
@@ -72,7 +118,8 @@
             </div>
 
             @if (activePanel === 'booking') {
-            <app-admin-booking [users]="users" [authView]="authView"></app-admin-booking>
+            <app-admin-booking [users]="users" [authView]="authView" [token]="token"
+                [backendBaseUrl]="backendBaseUrl"></app-admin-booking>
             }
             @if (activePanel === 'create_room') {
             <app-admin-create-room [authView]="authView" [token]="token" [userInfo]="userInfo"></app-admin-create-room>

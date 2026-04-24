@@ -75,6 +75,12 @@
     margin: 0 0 20px;
 }
 
+.group-title {
+    margin: 14px 0 10px;
+    font-size: 15px;
+    color: #1e293b;
+}
+
 .checkbox-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -124,4 +130,77 @@
 
 .stats-list li strong {
     color: #0f172a;
+}
+
+.preview-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1200;
+    padding: 20px;
+}
+
+.preview-modal {
+    background: #fff;
+    width: min(1100px, 96vw);
+    max-height: 90vh;
+    overflow: auto;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #cbd5e1;
+}
+
+.preview-table-wrap {
+    overflow: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 14px;
+}
+
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 540px;
+}
+
+.preview-table th,
+.preview-table td {
+    border-bottom: 1px solid #e2e8f0;
+    padding: 8px 10px;
+    text-align: left;
+    font-size: 13px;
+}
+
+.preview-table th {
+    background: #f8fafc;
+    font-weight: 700;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.btn-cancel,
+.btn-confirm {
+    border: none;
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-cancel {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.btn-confirm {
+    background: #0f766e;
+    color: #fff;
 }

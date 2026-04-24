@@ -4,25 +4,39 @@
         <div class="actions-card">
             <div class="export-btn-group">
                 <button type="button" class="btn-download" (click)="download('pdf')"
-                    [disabled]="!token || downloading !== null">
-                    {{ downloading === 'pdf' ? 'Đang tải PDF...' : 'Tải báo cáo PDF' }}
+                    [disabled]="!token || downloading !== null || previewLoading">
+                    {{ downloading === 'pdf' ? 'Đang tải PDF...' : (previewLoading && pendingFormat === 'pdf' ? 'Đang
+                    tải xem trước...' : 'Tải báo cáo PDF') }}
                 </button>
                 <button type="button" class="btn-download excel" (click)="download('xlsx')"
-                    [disabled]="!token || downloading !== null">
-                    {{ downloading === 'xlsx' ? 'Đang tải Excel...' : 'Tải báo cáo Excel' }}
+                    [disabled]="!token || downloading !== null || previewLoading">
+                    {{ downloading === 'xlsx' ? 'Đang tải Excel...' : (previewLoading && pendingFormat === 'xlsx' ?
+                    'Đang tải xem trước...' : 'Tải báo cáo Excel') }}
                 </button>
             </div>
         </div>
 
         <div class="cols-card">
             <h3>Chọn trường dữ liệu cần xuất</h3>
-            <p class="hint">Hệ thống sẽ reset về mặc định sau mỗi lần export.</p>
+            <!-- <p class="hint">Hệ thống sẽ reset về mặc định sau mỗi lần export.</p> -->
 
+            <h4 class="group-title">Bảng User</h4>
             <div class="checkbox-grid">
                 @for (col of exportColumns; track col.key) {
                 <label class="checkbox-field">
                     <input type="checkbox" [checked]="selectedExportColumns.has(col.key)"
                         (change)="toggleExportColumn(col.key)" />
+                    <span class="box-label">{{ col.label }}</span>
+                </label>
+                }
+            </div>
+
+            <h4 class="group-title">Bảng Room</h4>
+            <div class="checkbox-grid">
+                @for (col of templateColumns; track col.key) {
+                <label class="checkbox-field">
+                    <input type="checkbox" [checked]="selectedTemplateColumns.has(col.key)"
+                        (change)="toggleTemplateColumn(col.key)" />
                     <span class="box-label">{{ col.label }}</span>
                 </label>
                 }
@@ -37,4 +51,64 @@
             </ul>
         </div>
     </div>
+
+    @if (showPreviewModal) {
+    <div class="preview-modal-backdrop">
+        <div class="preview-modal">
+            <h3>Xem trước dữ liệu export</h3>
+            <p class="hint">Kiểm tra dữ liệu trước khi xuất file {{ pendingFormat?.toUpperCase() }}.</p>
+
+            <h4 class="group-title">TABLE_DATA_SOURCE (User)</h4>
+            <div class="preview-table-wrap">
+                <table class="preview-table">
+                    <thead>
+                        <tr>
+                            @for (col of previewData.userColumns; track col) {
+                            <th>{{ col }}</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (row of previewData.userRows.slice(0, 8); track $index) {
+                        <tr>
+                            @for (col of previewData.userColumns; track col) {
+                            <td>{{ row[col] ?? '' }}</td>
+                            }
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <h4 class="group-title">TEMPLATE_DATA_SOURCE (Room)</h4>
+            <div class="preview-table-wrap">
+                <table class="preview-table">
+                    <thead>
+                        <tr>
+                            @for (col of previewData.roomColumns; track col) {
+                            <th>{{ col }}</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (row of previewData.roomRows.slice(0, 8); track $index) {
+                        <tr>
+                            @for (col of previewData.roomColumns; track col) {
+                            <td>{{ row[col] ?? '' }}</td>
+                            }
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" (click)="cancelPreview()">Không export</button>
+                <button type="button" class="btn-confirm" (click)="confirmExport()" [disabled]="downloading !== null">
+                    {{ downloading ? 'Đang export...' : 'Đồng ý export' }}
+                </button>
+            </div>
+        </div>
+    </div>
+    }
 </section>

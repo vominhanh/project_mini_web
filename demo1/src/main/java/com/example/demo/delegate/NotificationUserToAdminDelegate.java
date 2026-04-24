@@ -42,6 +42,7 @@ public class NotificationUserToAdminDelegate implements JavaDelegate {
         event.setMessage("Co yeu cau tao phong moi can admin phe duyet");
         event.setCreatedAt(LocalDateTime.now());
         workflowEventPublisher.publishNotification(event);
+        log.info(event.toString());
 
         log.info("User-to-admin notification event published: roomId={}, roomName={}, ownerEmail={}",
                 roomId, roomName, ownerEmail);

@@ -31,20 +31,28 @@
 
         <div class="side-widgets">
             <div class="widget">
-                <h3>Danh sách Booking mới</h3>
-                <div class="booking-list">
-                    @for (row of bookingRows(); track row.id) {
-                    <div class="booking-item">
-                        <div class="b-info">
-                            <strong>{{ row.customer }}</strong>
-                            <span>{{ row.service }}</span>
-                        </div>
-                        <div class="b-status">
-                            <span>{{ row.status }}</span>
-                        </div>
-                    </div>
-                    }
-                </div>
+                <table class="booking-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Phòng</th>
+                            <th>Vị trí</th>
+                            <th>Địa chỉ</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (row of bookingRows(); track row.id) {
+                        <tr>
+                            <td>{{ row.id }}</td>
+                            <td>{{ row.roomName }}</td>
+                            <td>{{ row.location }}</td>
+                            <td>{{ row.address }}</td>
+                            <td>{{ row.status }}</td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

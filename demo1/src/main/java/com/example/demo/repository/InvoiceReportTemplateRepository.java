@@ -1,16 +1,27 @@
 package com.example.demo.repository;
 
-import com.example.demo.entity.InvoiceReportTemplate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
 public class InvoiceReportTemplateRepository {
+
+    /**
+     * Bản ghi nhị phân JRXML/logo lưu trong bảng invoice_report_template (không phải entity JPA).
+     */
+    public record StoredInvoiceTemplate(
+            String jrxmlName,
+            byte[] jrxmlContent,
+            String logoName,
+            byte[] logoContent,
+            Instant updatedAt) {
+    }
 
     public static final int SINGLE_TEMPLATE_ID = 1;
 
@@ -37,14 +48,14 @@ public class InvoiceReportTemplateRepository {
         return count == null ? 0 : count;
     }
 
-    public Optional<InvoiceReportTemplate> findById(int id) {
-        List<InvoiceReportTemplate> rows = jdbcTemplate.query(
+    public Optional<StoredInvoiceTemplate> findById(int id) {
+        List<StoredInvoiceTemplate> rows = jdbcTemplate.query(
                 """
                         SELECT jrxml_name, jrxml_content, logo_name, logo_content, updated_at
                         FROM invoice_report_template
                         WHERE id = ?
                         """,
-                (rs, rowNum) -> new InvoiceReportTemplate(
+                (rs, rowNum) -> new StoredInvoiceTemplate(
                         rs.getString("jrxml_name"),
                         rs.getBytes("jrxml_content"),
                         rs.getString("logo_name"),

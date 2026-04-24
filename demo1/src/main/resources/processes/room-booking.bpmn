@@ -23,7 +23,7 @@
       <bpmn:outgoing>f4</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:userTask id="adminApproval" name="Admin Approval" camunda:candidateGroups="admin">
-      <bpmn:incoming>f4</bpmn:incoming>
+      <bpmn:incoming>Flow_02ktwkc</bpmn:incoming>
       <bpmn:outgoing>f5</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:boundaryEvent id="timeout" attachedToRef="adminApproval">
@@ -72,7 +72,7 @@
     <bpmn:sequenceFlow id="f1" sourceRef="StartEvent" targetRef="validateData" />
     <bpmn:sequenceFlow id="f2" sourceRef="validateData" targetRef="checkDuplicate" />
     <bpmn:sequenceFlow id="f3" sourceRef="checkDuplicate" targetRef="checkBusinessRule" />
-    <bpmn:sequenceFlow id="f4" sourceRef="checkBusinessRule" targetRef="adminApproval" />
+    <bpmn:sequenceFlow id="f4" sourceRef="checkBusinessRule" targetRef="notificationUserToAdmin" />
     <bpmn:sequenceFlow id="f5" sourceRef="adminApproval" targetRef="decisionGateway" />
     <bpmn:sequenceFlow id="f7" sourceRef="decisionGateway" targetRef="notificationRejectUpdate">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approved == false}</bpmn:conditionExpression>
@@ -95,21 +95,31 @@
       <bpmn:incoming>f14</bpmn:incoming>
       <bpmn:outgoing>Flow_0cxy6dg</bpmn:outgoing>
     </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_02ktwkc" sourceRef="notificationUserToAdmin" targetRef="adminApproval" />
+    <bpmn:serviceTask id="notificationUserToAdmin" name="Notification - UserToAdmin" camunda:delegateExpression="${notificationUserToAdmin}">
+      <bpmn:incoming>f4</bpmn:incoming>
+      <bpmn:outgoing>Flow_02ktwkc</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_1i9my4k" sourceRef="notificationUserToAdminUpdate" targetRef="validateData" />
+    <bpmn:serviceTask id="notificationUserToAdminUpdate" name="Notification - UserToAdmin - Update" camunda:delegateExpression="${notificationUserToAdminUpdate}">
+      <bpmn:incoming>f15</bpmn:incoming>
+      <bpmn:outgoing>Flow_1i9my4k</bpmn:outgoing>
+    </bpmn:serviceTask>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="Diagram_1">
     <bpmndi:BPMNPlane id="Plane_1" bpmnElement="create_room_process">
       <bpmndi:BPMNShape bpmnElement="StartEvent">
-        <dc:Bounds x="170" y="150" width="36" height="36" />
+        <dc:Bounds x="172" y="150" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="154" y="190" width="68" height="14" />
+          <dc:Bounds x="156" y="190" width="68" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="validateData">
-        <dc:Bounds x="270" y="130" width="120" height="80" />
+        <dc:Bounds x="240" y="130" width="120" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="checkDuplicate">
-        <dc:Bounds x="450" y="130" width="120" height="80" />
+        <dc:Bounds x="460" y="130" width="120" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="checkBusinessRule">
@@ -117,141 +127,156 @@
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="adminApproval">
-        <dc:Bounds x="810" y="130" width="120" height="80" />
+        <dc:Bounds x="970" y="130" width="120" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="decisionGateway" isMarkerVisible="true">
-        <dc:Bounds x="1010" y="145" width="50" height="50" />
+        <dc:Bounds x="1170" y="145" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1009" y="110" width="53" height="14" />
+          <dc:Bounds x="1169" y="110" width="53" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="notificationApproved">
-        <dc:Bounds x="1150" y="50" width="120" height="80" />
+        <dc:Bounds x="1310" y="50" width="120" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="notificationRejectUpdate">
-        <dc:Bounds x="1150" y="200" width="120" height="80" />
+        <dc:Bounds x="1310" y="200" width="120" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="updateRoom">
-        <dc:Bounds x="630" y="320" width="120" height="80" />
+        <dc:Bounds x="790" y="320" width="120" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="notifyReject">
-        <dc:Bounds x="1330" y="200" width="120" height="80" />
+        <dc:Bounds x="1490" y="200" width="120" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="notifyApprove">
-        <dc:Bounds x="1330" y="50" width="120" height="80" />
+        <dc:Bounds x="1490" y="50" width="120" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape bpmnElement="EndApprove">
-        <dc:Bounds x="1520" y="72" width="36" height="36" />
+      <bpmndi:BPMNShape bpmnElement="EndReject">
+        <dc:Bounds x="1902" y="222" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1503" y="115" width="72" height="14" />
+          <dc:Bounds x="1882" y="265" width="77" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="EndApprove">
+        <dc:Bounds x="1680" y="72" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1663" y="115" width="72" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="loopGateway" isMarkerVisible="true">
-        <dc:Bounds x="1520" y="215" width="50" height="50" />
+        <dc:Bounds x="1680" y="215" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1519" y="180" width="52" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape bpmnElement="EndReject">
-        <dc:Bounds x="1742" y="222" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1722" y="265" width="77" height="14" />
+          <dc:Bounds x="1679" y="180" width="52" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_0eq0yd0_di" bpmnElement="notificationReject">
-        <dc:Bounds x="1600" y="200" width="100" height="80" />
+        <dc:Bounds x="1760" y="200" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1scfhmb_di" bpmnElement="notificationUserToAdmin">
+        <dc:Bounds x="800" y="128" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0t6xafg_di" bpmnElement="notificationUserToAdminUpdate">
+        <dc:Bounds x="450" y="320" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="timeout">
-        <dc:Bounds x="912" y="200" width="36" height="36" />
+        <dc:Bounds x="1072" y="200" width="36" height="36" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="825" y="245" width="70" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge bpmnElement="f1">
-        <di:waypoint x="206" y="168" />
-        <di:waypoint x="270" y="168" />
+        <di:waypoint x="208" y="168" />
+        <di:waypoint x="240" y="168" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="f2">
-        <di:waypoint x="390" y="168" />
-        <di:waypoint x="450" y="168" />
+        <di:waypoint x="360" y="168" />
+        <di:waypoint x="460" y="168" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="f3">
-        <di:waypoint x="570" y="168" />
+        <di:waypoint x="580" y="168" />
         <di:waypoint x="630" y="168" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="f4">
         <di:waypoint x="750" y="168" />
-        <di:waypoint x="810" y="168" />
+        <di:waypoint x="800" y="168" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="f5">
-        <di:waypoint x="930" y="170" />
-        <di:waypoint x="1010" y="170" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="f6">
-        <di:waypoint x="1060" y="145" />
-        <di:waypoint x="1110" y="90" />
-        <di:waypoint x="1150" y="90" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1000" y="110" width="39" height="14" />
-        </bpmndi:BPMNLabel>
+        <di:waypoint x="1090" y="170" />
+        <di:waypoint x="1170" y="170" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="f7">
-        <di:waypoint x="1060" y="170" />
-        <di:waypoint x="1110" y="240" />
-        <di:waypoint x="1150" y="240" />
+        <di:waypoint x="1220" y="170" />
+        <di:waypoint x="1270" y="240" />
+        <di:waypoint x="1310" y="240" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="f8">
-        <di:waypoint x="1270" y="240" />
-        <di:waypoint x="1330" y="240" />
+        <di:waypoint x="1430" y="240" />
+        <di:waypoint x="1490" y="240" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="f9">
-        <di:waypoint x="1270" y="90" />
-        <di:waypoint x="1330" y="90" />
+        <di:waypoint x="1430" y="90" />
+        <di:waypoint x="1490" y="90" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="f10">
-        <di:waypoint x="930" y="236" />
-        <di:waypoint x="930" y="310" />
-        <di:waypoint x="1210" y="310" />
-        <di:waypoint x="1210" y="280" />
+        <di:waypoint x="1090" y="236" />
+        <di:waypoint x="1090" y="310" />
+        <di:waypoint x="1370" y="310" />
+        <di:waypoint x="1370" y="280" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="f11">
-        <di:waypoint x="1450" y="90" />
-        <di:waypoint x="1520" y="90" />
+        <di:waypoint x="1610" y="90" />
+        <di:waypoint x="1680" y="90" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="f13">
-        <di:waypoint x="1450" y="240" />
-        <di:waypoint x="1520" y="240" />
+        <di:waypoint x="1610" y="240" />
+        <di:waypoint x="1680" y="240" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="f12">
-        <di:waypoint x="1545" y="265" />
-        <di:waypoint x="1545" y="360" />
-        <di:waypoint x="750" y="360" />
+        <di:waypoint x="1705" y="265" />
+        <di:waypoint x="1705" y="360" />
+        <di:waypoint x="910" y="360" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="1400" y="320" width="72" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="f14">
-        <di:waypoint x="1570" y="240" />
-        <di:waypoint x="1600" y="240" />
+        <di:waypoint x="1730" y="240" />
+        <di:waypoint x="1760" y="240" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="1510" y="295" width="50" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="f15">
-        <di:waypoint x="620" y="360" />
-        <di:waypoint x="330" y="360" />
-        <di:waypoint x="330" y="210" />
+        <di:waypoint x="790" y="360" />
+        <di:waypoint x="550" y="360" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="f6">
+        <di:waypoint x="1220" y="145" />
+        <di:waypoint x="1270" y="90" />
+        <di:waypoint x="1310" y="90" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1000" y="110" width="39" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0cxy6dg_di" bpmnElement="Flow_0cxy6dg">
-        <di:waypoint x="1700" y="240" />
-        <di:waypoint x="1742" y="240" />
+        <di:waypoint x="1860" y="240" />
+        <di:waypoint x="1902" y="240" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_02ktwkc_di" bpmnElement="Flow_02ktwkc">
+        <di:waypoint x="900" y="168" />
+        <di:waypoint x="970" y="168" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1i9my4k_di" bpmnElement="Flow_1i9my4k">
+        <di:waypoint x="450" y="360" />
+        <di:waypoint x="300" y="360" />
+        <di:waypoint x="300" y="210" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

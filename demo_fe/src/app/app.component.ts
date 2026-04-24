@@ -90,7 +90,8 @@ export class AppComponent {
     }
 
     const path = window.location.pathname;
-    if (!this.isAuthenticated() && path !== '/') {
+    const normalizedPath = path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
+    if (!this.isAuthenticated() && normalizedPath !== '/') {
       this.navigateTo('/', true);
       return;
     }
@@ -103,7 +104,7 @@ export class AppComponent {
       return;
     }
 
-    if (path !== '/admin') {
+    if (normalizedPath !== '/admin') {
       this.navigateTo('/admin', true);
     }
   }
